@@ -1,5 +1,6 @@
 import coursesRaw from '@/data/courses.json';
 import murRaw from '@/data/mur_universities_enriched.json';
+import scoredRaw from '@/data/milan_courses_scored.json';
 import { UNI_ALIAS_MAP } from '@/data/uniAliasMap';
 
 export interface Course {
@@ -16,6 +17,7 @@ export interface Course {
   area: string;
   url: string;
   accesso: string;
+  areaScores: Record<string, number>; // relevance per user interest area, 0–10
 }
 
 export interface MurUniversity {
@@ -112,10 +114,24 @@ export const MILAN_UNIVERSITIES = MUR_UNIVERSITIES.filter(
 
 const MILAN_MUR_CODES = new Set(MILAN_UNIVERSITIES.map(u => u.mur_code));
 
-export const MILAN_COURSES = ALL_COURSES.filter(c => {
-  const mur = resolveUniversity(c.universita);
-  return mur && MILAN_MUR_CODES.has(mur.mur_code);
-});
+type ScoredEntry = { id: number; nome: string; scores: Record<string, number> };
+const SCORED_MAP = new Map<number, ScoredEntry>(
+  (scoredRaw as ScoredEntry[]).map(s => [s.id, s])
+);
+
+export const MILAN_COURSES = ALL_COURSES
+  .filter(c => {
+    const mur = resolveUniversity(c.universita);
+    return mur && MILAN_MUR_CODES.has(mur.mur_code);
+  })
+  .map(c => {
+    const scored = SCORED_MAP.get(c.id);
+    return {
+      ...c,
+      nome: scored?.nome ?? c.nome,
+      areaScores: scored?.scores ?? {},
+    };
+  });
 
 // ─── Subject categories ───────────────────────────────────────────────────────
 

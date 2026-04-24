@@ -20,29 +20,6 @@ export const DIMENSIONS = [
 export type Dimension = typeof DIMENSIONS[number];
 
 /**
- * Maps course `area` field values → user profile area strings.
- * Allows hard-matching between the two naming systems.
- * Extend this when new course areas are added to the dataset.
- */
-export const COURSE_AREA_TO_USER_AREAS: Record<string, string[]> = {
-  'Ingegneria':               ['Ingegneria'],
-  'Matematica e Informatica': ['Matematica', 'Informatica & AI'],
-  'Fisica':                   ['Fisica'],
-  'Chimica':                  ['Chimica'],
-  'Biologia':                 ['Biologia & Biotecnologie'],
-  'Scienze della Terra':      ['Scienze Ambientali & Agraria'],
-  'Scienze Agrarie':          ['Scienze Ambientali & Agraria'],
-  'Economia':                 ['Economia & Management', 'Finanza & Banking', 'Marketing & Comunicazione'],
-  'Giurisprudenza':           ['Giurisprudenza'],
-  'Medicina':                 ['Medicina', 'Farmacia & Scienze Farmaceutiche', 'Nutrizione & Alimentazione'],
-  'Scienze Storiche':         ['Storia, Filosofia & Sociologia'],
-  "Scienze dell'Antichità":   ['Storia, Filosofia & Sociologia', 'Lingue & Letterature'],
-  'Scienze Politiche':        ['Scienze Politiche & Relazioni Internazionali', 'Giurisprudenza'],
-  'Architettura':             ['Architettura & Design', 'Arte & Moda'],
-  // Add new course areas here as the dataset grows
-};
-
-/**
  * Psycho-attitudinal weights per course area.
  * Values are relative importance (0–50). Higher = stronger correlation.
  * When orientation games produce dimension scores (0–1 floats),

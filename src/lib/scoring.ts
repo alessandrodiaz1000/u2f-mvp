@@ -1,9 +1,5 @@
 import { MILAN_COURSES } from './data';
-import {
-  AREA_DIMENSION_WEIGHTS,
-  COURSE_AREA_TO_USER_AREAS,
-  DIPLOMA_AREA_BOOST,
-} from './courseWeights';
+import { AREA_DIMENSION_WEIGHTS, DIPLOMA_AREA_BOOST } from './courseWeights';
 import type { UserProfile } from '@/context/AuthContext';
 
 type Course = typeof MILAN_COURSES[number];
@@ -15,7 +11,7 @@ type Course = typeof MILAN_COURSES[number];
  */
 export interface ScoreBreakdown {
   total: number;
-  areaMatch: boolean;     // hard: course area ∈ user's selected areas
+  areaScore: number;      // sum of course.areaScores[a] for each user selected area (0–10 per area)
   degreeMatch: boolean;   // hard: course tipo === user's degreeType preference
   diplomaBoost: number;   // soft: academic background relevance
   softScore: number;      // soft: psycho-attitudinal dimension score
@@ -37,10 +33,12 @@ export interface ScoreBreakdown {
 export function scoreCourse(course: Course, user: UserProfile): ScoreBreakdown {
   let total = 0;
 
-  // ── HARD SIGNAL 1: Area match ────────────────────────────────────
-  const mappedUserAreas = COURSE_AREA_TO_USER_AREAS[course.area] ?? [];
-  const areaMatch = mappedUserAreas.some(a => user.areas.includes(a));
-  if (areaMatch) total += 100;
+  // ── AREA SCORE: sum of per-area relevance scores across user's selected areas ──
+  // Each area contributes 0–10. Multiply by 10 so a perfect single-area match = 100.
+  const areaScore = user.areas.reduce(
+    (sum, a) => sum + ((course.areaScores ?? {})[a] ?? 0), 0
+  );
+  total += areaScore * 10;
 
   // ── HARD SIGNAL 2: Degree type ──────────────────────────────────
   const wantsDegree = !!user.degreeType && user.degreeType !== 'Non so ancora';
@@ -69,7 +67,7 @@ export function scoreCourse(course: Course, user: UserProfile): ScoreBreakdown {
 
   total += softScore;
 
-  return { total, areaMatch, degreeMatch, diplomaBoost, softScore, missingDimensions };
+  return { total, areaScore, degreeMatch, diplomaBoost, softScore, missingDimensions };
 }
 
 /**
