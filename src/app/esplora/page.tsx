@@ -366,14 +366,14 @@ export default function EsploraPage() {
             onClick={() => setUniMenu(null)}
             style={{
               position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)',
-              zIndex: 100, backdropFilter: 'blur(2px)',
+              zIndex: 300, backdropFilter: 'blur(2px)',
             }}
           />
           {/* Sheet */}
           <div style={{
-            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 101,
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 301,
             background: '#fff', borderRadius: '20px 20px 0 0',
-            padding: '1.25rem 1.25rem 2rem',
+            padding: '1.25rem 1.25rem 2.5rem',
             boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
           }}>
             {/* Handle */}
