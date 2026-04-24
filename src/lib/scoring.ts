@@ -93,10 +93,14 @@ export function buildDeck(
 ): Course[] {
   const seen  = new Set(user.swipedIds);
   const faved = new Set(user.favorites);
+  const wantsDegree = user.degreeType && user.degreeType !== 'Non so ancora';
 
   return MILAN_COURSES
     .filter(c => !seen.has(c.id) && !faved.has(c.id))
-    .map(c => ({ course: c, score: scoreCourse(c, user).total }))
+    // Hard filter: degree type is always enforced when the user has a preference
+    .filter(c => !wantsDegree || c.tipo === user.degreeType)
+    // Add small random jitter so equal-score courses don't stay in dataset order
+    .map(c => ({ course: c, score: scoreCourse(c, user).total + Math.random() * 5 }))
     .sort((a, b) => b.score - a.score)
     .map(({ course }) => course)
     .slice(0, maxCards);
