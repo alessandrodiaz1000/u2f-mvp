@@ -341,13 +341,16 @@ export default function DashboardPage() {
                       <PentagonChart scores={scores} size={76} />
                     </div>
 
-                    {/* Axis labels */}
-                    <div style={{
-                      display: 'flex', justifyContent: 'space-around',
-                      fontSize: '10px',
-                    }}>
-                      {['📍', '💰', '🎯', '🧠', '🚪'].map(e => (
-                        <span key={e}>{e}</span>
+                    {/* Score rows */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      {(['📍 Geo', '💰 Costo', '🎯 Int.', '🧠 Att.', '🚪 Acc.'] as const).map((label, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '9px', color: '#888', width: '38px', flexShrink: 0 }}>{label}</span>
+                          <div style={{ flex: 1, height: '4px', background: '#F0F0F0', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${scores[i]}%`, background: 'var(--accent)', borderRadius: '2px' }} />
+                          </div>
+                          <span style={{ fontSize: '9px', color: '#BBB', width: '22px', textAlign: 'right', flexShrink: 0 }}>{scores[i]}</span>
+                        </div>
                       ))}
                     </div>
 
@@ -367,15 +370,6 @@ export default function DashboardPage() {
               })}
             </div>
 
-            {/* Pentagon legend */}
-            <div style={{
-              padding: '0.625rem 1.25rem 0',
-              display: 'flex', gap: '0.875rem', flexWrap: 'wrap',
-            }}>
-              {[['📍', 'Geo'], ['💰', 'Costo'], ['🎯', 'Interessi'], ['🧠', 'Attitudine'], ['🚪', 'Accesso']].map(([icon, label]) => (
-                <span key={label} style={{ fontSize: '10px', color: '#BBB' }}>{icon} {label}</span>
-              ))}
-            </div>
           </>
         )}
       </section>
