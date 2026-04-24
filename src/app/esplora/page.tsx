@@ -7,6 +7,8 @@ import {
 } from '@/lib/data';
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 type Tab = 'uni' | 'corsi';
 
@@ -18,9 +20,14 @@ const TIPO_STYLE: Record<string, { text: string; bg: string }> = {
   'Ciclo Unico': { text: '#5B21B6', bg: '#F5F3FF' },
 };
 
+type UniMenu = { slug: string | null; url: string | undefined; name: string } | null;
+
 export default function EsploraPage() {
   const { t } = useLanguage();
+  const { user, addFavorite, removeFavorite } = useAuth();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>('uni');
+  const [uniMenu, setUniMenu] = useState<UniMenu>(null);
 
   // University filters
   const [search, setSearch]               = useState('');
@@ -301,6 +308,7 @@ export default function EsploraPage() {
               const ts = TIPO_STYLE[c.tipo] ?? TIPO_STYLE.Triennale;
               const mur = resolveUniversity(c.universita);
               const slug = mur ? uniSlug(mur.name) : null;
+              const isFaved = user?.favorites.includes(c.id) ?? false;
               return (
                 <div key={c.id} style={{
                   padding: '0.875rem 0',
@@ -318,27 +326,106 @@ export default function EsploraPage() {
                     <div style={{ fontSize: '13px', fontWeight: 500, color: '#111', lineHeight: 1.35, marginBottom: '3px' }}>
                       {c.nome}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {slug ? (
-                        <Link href={`/universita/${slug}`} style={{ fontSize: '11px', color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}>
-                          {c.universita.length > 40 ? c.universita.slice(0, 38) + '…' : c.universita}
-                        </Link>
-                      ) : (
-                        <span style={{ fontSize: '11px', color: '#999' }}>{c.universita}</span>
-                      )}
-                      {c.url && (
-                        <a href={c.url} target="_blank" rel="noopener noreferrer"
-                          style={{ fontSize: '11px', color: '#999', textDecoration: 'none' }}>
-                          →
-                        </a>
-                      )}
-                    </div>
+                    <button
+                      onClick={() => setUniMenu({ slug, url: c.url, name: c.universita })}
+                      style={{
+                        fontSize: '11px', color: 'var(--accent)', fontWeight: 500,
+                        background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                        textAlign: 'left', lineHeight: 1.4,
+                      }}
+                    >
+                      {c.universita.length > 40 ? c.universita.slice(0, 38) + '…' : c.universita}
+                    </button>
                   </div>
+                  {/* Save button */}
+                  <button
+                    onClick={() => isFaved ? removeFavorite(c.id) : addFavorite(c.id)}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      padding: '0.25rem', flexShrink: 0, marginTop: '1px',
+                      color: isFaved ? '#ef4444' : '#ccc',
+                      fontSize: '18px', lineHeight: 1,
+                      transition: 'color 0.15s',
+                    }}
+                    aria-label={isFaved ? 'Rimuovi dai salvati' : 'Salva corso'}
+                  >
+                    {isFaved ? '♥' : '♡'}
+                  </button>
                 </div>
               );
             })}
           </div>
         </div>
+      )}
+
+      {/* University action sheet */}
+      {uniMenu && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setUniMenu(null)}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)',
+              zIndex: 100, backdropFilter: 'blur(2px)',
+            }}
+          />
+          {/* Sheet */}
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 101,
+            background: '#fff', borderRadius: '20px 20px 0 0',
+            padding: '1.25rem 1.25rem 2rem',
+            boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
+          }}>
+            {/* Handle */}
+            <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#E5E5E5', margin: '0 auto 1.25rem' }} />
+            <p style={{ fontSize: '13px', color: '#999', marginBottom: '1rem', lineHeight: 1.4 }}>
+              {uniMenu.name.length > 50 ? uniMenu.name.slice(0, 48) + '…' : uniMenu.name}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              {uniMenu.slug && (
+                <button
+                  onClick={() => { setUniMenu(null); router.push(`/universita/${uniMenu.slug}`); }}
+                  style={{
+                    width: '100%', padding: '0.875rem 1rem',
+                    background: 'var(--accent)', color: '#fff',
+                    border: 'none', borderRadius: '14px',
+                    fontSize: '15px', fontWeight: 600, cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  📚 Vedi tutti i corsi
+                </button>
+              )}
+              {uniMenu.url && (
+                <a
+                  href={uniMenu.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setUniMenu(null)}
+                  style={{
+                    display: 'block', width: '100%', padding: '0.875rem 1rem',
+                    background: '#F7F7F7', color: '#111',
+                    border: '1px solid #E5E5E5', borderRadius: '14px',
+                    fontSize: '15px', fontWeight: 500, cursor: 'pointer',
+                    textDecoration: 'none',
+                  }}
+                >
+                  🌐 Sito ufficiale
+                </a>
+              )}
+              <button
+                onClick={() => setUniMenu(null)}
+                style={{
+                  width: '100%', padding: '0.75rem',
+                  background: 'none', border: 'none',
+                  fontSize: '14px', color: '#999', cursor: 'pointer',
+                }}
+              >
+                Annulla
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
