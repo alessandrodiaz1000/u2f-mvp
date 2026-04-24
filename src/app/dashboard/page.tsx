@@ -98,10 +98,16 @@ function getNextStep(user: UserProfile): { icon: string; title: string; sub: str
 }
 
 // ── Pentagon SVG ──────────────────────────────────────────────────────
-function PentagonChart({ scores, size = 76 }: { scores: [number, number, number, number, number]; size?: number }) {
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = size * 0.38;
+// Fixed internal coord system: cx=50 cy=52, pentagon r=28, labels at r=44
+// viewBox covers label overshoot on all sides
+const PENTAGON_LABELS   = ['📍', '💰', '🎯', '🧠', '🚪'];
+const PENTAGON_ANCHORS  = ['middle', 'start', 'start', 'end', 'end'] as const;
+const PENTAGON_BASELINES = ['auto', 'middle', 'hanging', 'hanging', 'middle'] as const;
+
+function PentagonChart({ scores }: { scores: [number, number, number, number, number] }) {
+  const cx = 50; const cy = 52;
+  const r = 28;   const labelR = 44;
+  const minR = 6; // score=0 still shows a small pentagon, not a dot
 
   const pt = (i: number, len: number): [number, number] => {
     const a = (i * 72 - 90) * (Math.PI / 180);
@@ -110,13 +116,14 @@ function PentagonChart({ scores, size = 76 }: { scores: [number, number, number,
 
   const bgPts    = Array.from({ length: 5 }, (_, i) => pt(i, r));
   const midPts   = Array.from({ length: 5 }, (_, i) => pt(i, r * 0.5));
-  const scorePts = scores.map((s, i) => pt(i, (Math.max(s, 4) / 100) * r));
+  const scorePts = scores.map((s, i) => pt(i, minR + (s / 100) * (r - minR)));
+  const labelPts = Array.from({ length: 5 }, (_, i) => pt(i, labelR));
 
   const path = (pts: [number, number][]) =>
     pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ') + 'Z';
 
   return (
-    <svg width={size} height={size}>
+    <svg width="88" height="88" viewBox="-5 -14 110 120">
       {bgPts.map((p, i) => (
         <line key={i} x1={cx} y1={cy} x2={p[0]} y2={p[1]} stroke="#EBEBEB" strokeWidth={0.75} />
       ))}
@@ -125,6 +132,18 @@ function PentagonChart({ scores, size = 76 }: { scores: [number, number, number,
       <path d={path(scorePts)} fill="rgba(27,94,82,0.18)" stroke="var(--accent)" strokeWidth={1.25} />
       {scorePts.map((p, i) => (
         <circle key={i} cx={p[0]} cy={p[1]} r={2} fill="var(--accent)" />
+      ))}
+      {labelPts.map((p, i) => (
+        <text
+          key={i}
+          x={p[0]} y={p[1]}
+          textAnchor={PENTAGON_ANCHORS[i]}
+          dominantBaseline={PENTAGON_BASELINES[i]}
+          fontSize="10"
+          fontFamily="system-ui, sans-serif"
+        >
+          {PENTAGON_LABELS[i]}
+        </text>
       ))}
     </svg>
   );
@@ -338,20 +357,7 @@ export default function DashboardPage() {
 
                     {/* Pentagon */}
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <PentagonChart scores={scores} size={76} />
-                    </div>
-
-                    {/* Score rows */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      {(['📍 Geo', '💰 Costo', '🎯 Int.', '🧠 Att.', '🚪 Acc.'] as const).map((label, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ fontSize: '9px', color: '#888', width: '38px', flexShrink: 0 }}>{label}</span>
-                          <div style={{ flex: 1, height: '4px', background: '#F0F0F0', borderRadius: '2px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${scores[i]}%`, background: 'var(--accent)', borderRadius: '2px' }} />
-                          </div>
-                          <span style={{ fontSize: '9px', color: '#BBB', width: '22px', textAlign: 'right', flexShrink: 0 }}>{scores[i]}</span>
-                        </div>
-                      ))}
+                      <PentagonChart scores={scores} />
                     </div>
 
                     {/* University link */}
