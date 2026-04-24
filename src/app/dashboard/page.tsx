@@ -3,52 +3,191 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { MILAN_COURSES, getMurBySlug, uniSlug, resolveUniversity } from '@/lib/data';
+import { MILAN_COURSES, resolveUniversity, uniSlug } from '@/lib/data';
+import { scoreCourse } from '@/lib/scoring';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { U2FLogo } from '@/components/U2FLogo';
+import type { Course } from '@/lib/data';
+import type { UserProfile } from '@/context/AuthContext';
 
-const TIPO_STYLE: Record<string, { text: string; bg: string; border: string }> = {
-  Triennale:     { text: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
-  Magistrale:    { text: '#065F46', bg: '#ECFDF5', border: '#A7F3D0' },
-  'Ciclo Unico': { text: '#5B21B6', bg: '#F5F3FF', border: '#DDD6FE' },
+const TIPO_STYLE: Record<string, { text: string; bg: string }> = {
+  Triennale:     { text: '#1D4ED8', bg: '#EFF6FF' },
+  Magistrale:    { text: '#065F46', bg: '#ECFDF5' },
+  'Ciclo Unico': { text: '#5B21B6', bg: '#F5F3FF' },
 };
 
-const STEP_IDS = ['explore', 'save', 'compare', 'connect', 'deadline', 'apply'] as const;
+const PRIVATE_KEYWORDS = ['Bocconi', 'Cattolica', 'San Raffaele', 'IULM'];
 
+// 5 pentagon scores: [geo, costo, interessi, attitudine, accesso]
+function computeCourseScores(course: Course, user: UserProfile): [number, number, number, number, number] {
+  const geo = 100;
+
+  const costo = PRIVATE_KEYWORDS.some(k => course.universita.includes(k)) ? 35 : 75;
+
+  const areaRaw = user.areas.reduce((sum, a) => sum + ((course.areaScores ?? {})[a] ?? 0), 0);
+  const areaMax = Math.max(user.areas.length * 10, 1);
+  const interessi = Math.min(100, Math.round((areaRaw / areaMax) * 100));
+
+  const { softScore } = scoreCourse(course, user);
+  const attitudine = Math.min(100, Math.round((softScore / 50) * 100));
+
+  const acc = (course.accesso ?? '').toLowerCase();
+  const accesso = acc.includes('libero') ? 85 : acc.includes('locale') ? 40 : 55;
+
+  return [geo, costo, interessi, attitudine, accesso];
+}
+
+function getMatchPct(course: Course, user: UserProfile): number {
+  if (user.areas.length === 0) return 50;
+  const areaRaw = user.areas.reduce((sum, a) => sum + ((course.areaScores ?? {})[a] ?? 0), 0);
+  const areaMax = Math.max(user.areas.length * 10, 1);
+  return Math.min(100, Math.round((areaRaw / areaMax) * 100));
+}
+
+function computeClarity(user: UserProfile): number {
+  const exploration = Math.min(25, Math.round(Math.sqrt(Math.min(user.swipedIds.length, 30) / 30) * 25));
+
+  const favCourses = MILAN_COURSES.filter(c => user.favorites.includes(c.id));
+  let consistency = 0;
+  if (favCourses.length > 0 && user.areas.length > 0) {
+    const counts: Record<string, number> = {};
+    for (const c of favCourses) {
+      const topArea = user.areas.reduce((best, a) =>
+        ((c.areaScores[a] ?? 0) > (c.areaScores[best] ?? -1)) ? a : best
+      , user.areas[0]);
+      counts[topArea] = (counts[topArea] ?? 0) + 1;
+    }
+    const maxCount = Math.max(...Object.values(counts), 0);
+    consistency = Math.round((maxCount / favCourses.length) * 25);
+  }
+
+  const comparison = Math.min(25, Math.round(((user.comparisonsCount ?? 0) / 3) * 25));
+
+  const filled = Object.keys(user.scores ?? {}).length;
+  const depth = Math.round((filled / 10) * 25);
+
+  return exploration + consistency + comparison + depth;
+}
+
+function computeDirection(user: UserProfile): { area: string; pct: number }[] {
+  const favCourses = MILAN_COURSES.filter(c => user.favorites.includes(c.id));
+  if (favCourses.length === 0 || user.areas.length === 0) return [];
+
+  const totals: Record<string, number> = {};
+  for (const a of user.areas) {
+    totals[a] = favCourses.reduce((sum, c) => sum + ((c.areaScores[a] ?? 0)), 0);
+  }
+  const max = Math.max(...Object.values(totals), 1);
+  return Object.entries(totals)
+    .filter(([, v]) => v > 0)
+    .map(([area, score]) => ({ area, pct: Math.round((score / max) * 100) }))
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 4);
+}
+
+function getNextStep(user: UserProfile): { icon: string; title: string; sub: string; href: string } {
+  if (user.swipedIds.length === 0)
+    return { icon: '❤️', title: 'Inizia a esplorare', sub: 'Scorri i corsi e salva quelli che ti interessano', href: '/scopri' };
+  if (user.favorites.length < 2)
+    return { icon: '🔖', title: 'Salva altri corsi', sub: 'Ti servono almeno 2 corsi salvati per confrontarli', href: '/scopri' };
+  if ((user.comparisonsCount ?? 0) === 0)
+    return { icon: '⚖️', title: 'Confronta i tuoi corsi', sub: 'Metti fianco a fianco i corsi salvati e chiedilo all\'AI', href: '/preferiti' };
+  if (Object.keys(user.scores ?? {}).length === 0)
+    return { icon: '🧭', title: 'Scopri chi sei', sub: 'Fai il test di orientamento per affinare il tuo profilo', href: '/orientamento' };
+  return { icon: '📅', title: 'Segna le scadenze', sub: 'Controlla le date di ammissione che ti interessano', href: '/esplora' };
+}
+
+// ── Pentagon SVG ──────────────────────────────────────────────────────
+function PentagonChart({ scores, size = 76 }: { scores: [number, number, number, number, number]; size?: number }) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size * 0.38;
+
+  const pt = (i: number, len: number): [number, number] => {
+    const a = (i * 72 - 90) * (Math.PI / 180);
+    return [cx + len * Math.cos(a), cy + len * Math.sin(a)];
+  };
+
+  const bgPts    = Array.from({ length: 5 }, (_, i) => pt(i, r));
+  const midPts   = Array.from({ length: 5 }, (_, i) => pt(i, r * 0.5));
+  const scorePts = scores.map((s, i) => pt(i, (Math.max(s, 4) / 100) * r));
+
+  const path = (pts: [number, number][]) =>
+    pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ') + 'Z';
+
+  return (
+    <svg width={size} height={size}>
+      {bgPts.map((p, i) => (
+        <line key={i} x1={cx} y1={cy} x2={p[0]} y2={p[1]} stroke="#EBEBEB" strokeWidth={0.75} />
+      ))}
+      <path d={path(midPts)} fill="none" stroke="#F0F0F0" strokeWidth={0.5} />
+      <path d={path(bgPts)}  fill="#F8F8F8" stroke="#E0E0E0" strokeWidth={0.75} />
+      <path d={path(scorePts)} fill="rgba(27,94,82,0.18)" stroke="var(--accent)" strokeWidth={1.25} />
+      {scorePts.map((p, i) => (
+        <circle key={i} cx={p[0]} cy={p[1]} r={2} fill="var(--accent)" />
+      ))}
+    </svg>
+  );
+}
+
+// ── Clarity Score ring ────────────────────────────────────────────────
+function ClarityRing({ score }: { score: number }) {
+  const r = 36;
+  const circ = 2 * Math.PI * r;
+  const filled = (score / 100) * circ;
+  const color = score >= 70 ? '#22c55e' : score >= 35 ? 'var(--accent)' : '#F59E0B';
+
+  return (
+    <svg width="88" height="88" viewBox="0 0 88 88" style={{ flexShrink: 0 }}>
+      <circle cx="44" cy="44" r={r} fill="none" stroke="#EBEBEB" strokeWidth="7" />
+      <circle
+        cx="44" cy="44" r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="7"
+        strokeDasharray={`${filled} ${circ - filled}`}
+        strokeLinecap="round"
+        transform="rotate(-90 44 44)"
+      />
+      <text x="44" y="41" textAnchor="middle" fontSize="17" fontWeight="700" fill="#111" fontFamily="Inter,sans-serif">{score}</text>
+      <text x="44" y="56" textAnchor="middle" fontSize="8"  fill="#AAA"  fontFamily="Inter,sans-serif">/100</text>
+    </svg>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
-  const ta = t.app;
 
   if (!user?.onboarded) { router.replace('/login'); return null; }
 
-  const favoriteCourses = MILAN_COURSES.filter(c => user.favorites.includes(c.id));
-  const firstName = user.name.split(' ')[0];
+  const firstName    = user.name.split(' ')[0];
+  const favCourses   = MILAN_COURSES.filter(c => user.favorites.includes(c.id));
+  const clarityScore = computeClarity(user);
+  const direction    = computeDirection(user);
+  const nextStep     = getNextStep(user);
 
-  const JOURNEY_STEPS = ta.dashboard.journeySteps.map((s, i) => ({
-    ...s,
-    id: STEP_IDS[i],
-    done: i === 0,
-  }));
-
-  const completedSteps = JOURNEY_STEPS.filter(s => s.done || (s.id === 'save' && favoriteCourses.length > 0)).length;
-  const progress = Math.round((completedSteps / JOURNEY_STEPS.length) * 100);
+  const clarityLabel =
+    clarityScore >= 70 ? 'Ottima chiarezza!' :
+    clarityScore >= 35 ? 'Buon inizio' :
+    'Stai iniziando';
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div style={{ background: '#F5F5F5', minHeight: '100svh', paddingBottom: '2.5rem' }}>
 
       {/* ── Header ── */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'var(--surface)', borderBottom: '1px solid var(--border)',
-        padding: '1rem 1.25rem',
+        background: '#fff', borderBottom: '1px solid #EBEBEB',
+        padding: '0.875rem 1.25rem',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <U2FLogo size={26} />
         <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
           <LanguageSwitcher />
-          <Link href="/profilo" style={{ display: 'flex', alignItems: 'center', color: 'var(--text-3)', padding: '0.25rem' }}>
+          <Link href="/profilo" style={{ display: 'flex', alignItems: 'center', color: '#AAA', padding: '0.25rem' }}>
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -56,218 +195,257 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* ── Profile pill ── */}
-      <section style={{ padding: '1.25rem 1.25rem 0' }}>
+      {/* ── Clarity Score card ── */}
+      <section style={{ padding: '1rem 1.25rem 0' }}>
         <div style={{
-          background: 'var(--surface)', borderRadius: '16px',
-          border: '1px solid var(--border)', padding: '1.125rem',
-          display: 'flex', alignItems: 'center', gap: '1rem',
+          background: '#fff', borderRadius: '20px', border: '1px solid #EBEBEB',
+          padding: '1.25rem 1.5rem',
+          display: 'flex', alignItems: 'center', gap: '1.25rem',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
         }}>
-          {/* Avatar */}
-          <div style={{
-            width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
-            background: 'var(--accent)', color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '18px', fontWeight: 700,
-          }}>
-            {user.name.charAt(0).toUpperCase()}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-1)', marginBottom: '2px' }}>
-              {user.name}
-            </div>
-            <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-              {[...user.areas, user.diploma, user.city].filter(Boolean).map(tag => (
-                <span key={tag} style={{
-                  fontSize: '10px', color: 'var(--text-3)', fontWeight: 500,
-                  background: 'var(--bg)', border: '1px solid var(--border)',
-                  borderRadius: '4px', padding: '0.1rem 0.375rem',
-                }}>
-                  {tag}
-                </span>
-              ))}
-            </div>
+          <ClarityRing score={clarityScore} />
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '10px', color: '#BBB', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+              CLARITY SCORE
+            </p>
+            <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#111', letterSpacing: '-0.03em', marginBottom: '0.25rem', lineHeight: 1.2 }}>
+              {clarityLabel}
+            </h2>
+            <p style={{ fontSize: '12px', color: '#999', lineHeight: 1.5 }}>
+              Ciao {firstName} — esplora, salva e confronta per aumentarlo.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* ── Your Journey ── */}
-      <section style={{ padding: '1.5rem 1.25rem 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.03em' }}>
-            {ta.dashboard.journey}
-          </h2>
-          <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 600 }}>
-            {completedSteps}/{JOURNEY_STEPS.length} {ta.dashboard.steps}
-          </span>
-        </div>
-
-        {/* Progress bar */}
-        <div style={{
-          height: '5px', background: 'var(--border)', borderRadius: '3px',
-          marginBottom: '1.5rem', overflow: 'hidden',
-        }}>
+      {/* ── La tua direzione ── */}
+      {direction.length > 0 && (
+        <section style={{ padding: '0.875rem 1.25rem 0' }}>
           <div style={{
-            height: '100%', width: `${progress}%`,
-            background: 'var(--accent)', borderRadius: '3px',
-            transition: 'width 0.5s ease',
-          }} />
-        </div>
-
-        {/* Steps */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-          {JOURNEY_STEPS.map((s, i) => {
-            const isDone = s.done || (s.id === 'save' && favoriteCourses.length > 0);
-            const isNext = !isDone && JOURNEY_STEPS.slice(0, i).every(prev =>
-              prev.done || (prev.id === 'save' && favoriteCourses.length > 0)
-            );
-            return (
-              <div key={s.id} style={{ display: 'flex', gap: '0.875rem', paddingBottom: '1.25rem', position: 'relative' }}>
-                {/* Connector line */}
-                {i < JOURNEY_STEPS.length - 1 && (
-                  <div style={{
-                    position: 'absolute', left: '16px', top: '34px',
-                    width: '2px', height: 'calc(100% - 10px)',
-                    background: isDone ? 'var(--accent)' : 'var(--border)',
-                    transition: 'background 0.3s',
-                  }} />
-                )}
-                {/* Step circle */}
-                <div style={{
-                  width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: isDone ? 'var(--accent)' : isNext ? 'var(--accent-bg)' : 'var(--surface)',
-                  border: `2px solid ${isDone ? 'var(--accent)' : isNext ? 'var(--accent)' : 'var(--border)'}`,
-                  fontSize: isDone ? '14px' : '14px',
-                  zIndex: 1,
-                  transition: 'all 0.3s',
-                }}>
-                  {isDone
-                    ? <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                    : <span style={{ fontSize: '14px' }}>{s.icon}</span>
-                  }
+            background: '#fff', borderRadius: '20px', border: '1px solid #EBEBEB',
+            padding: '1.25rem',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+          }}>
+            <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: '1rem' }}>
+              La tua direzione
+            </h2>
+            {direction.map(({ area, pct }) => (
+              <div key={area} style={{ marginBottom: '0.625rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                  <span style={{ fontSize: '12px', color: '#555', fontWeight: 500 }}>{area}</span>
+                  <span style={{ fontSize: '10px', color: '#BBB', fontWeight: 500 }}>{pct}%</span>
                 </div>
-                {/* Step content */}
-                <div style={{ flex: 1, paddingTop: '0.375rem' }}>
+                <div style={{ height: '5px', background: '#F0F0F0', borderRadius: '3px', overflow: 'hidden' }}>
                   <div style={{
-                    fontSize: '14px', fontWeight: isDone ? 500 : isNext ? 600 : 400,
-                    color: isDone ? 'var(--text-3)' : isNext ? 'var(--text-1)' : 'var(--text-2)',
-                    marginBottom: '2px', letterSpacing: '-0.01em',
-                    textDecoration: isDone ? 'line-through' : 'none',
-                  }}>
-                    {s.label}
-                  </div>
-                  {isNext && (
-                    <div style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.45 }}>
-                      {s.sub}
-                    </div>
-                  )}
+                    height: '100%', width: `${pct}%`,
+                    background: 'var(--accent)', borderRadius: '3px',
+                  }} />
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* ── Corsi Salvati (preview) ── */}
-      <section style={{ padding: '0.5rem 1.25rem 1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.03em' }}>
-            {ta.dashboard.savedCourses}
+      {/* ── Corsi salvati carousel ── */}
+      <section style={{ padding: '0.875rem 0 0' }}>
+        <div style={{
+          padding: '0 1.25rem',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginBottom: '0.75rem',
+        }}>
+          <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
+            Corsi salvati{favCourses.length > 0 && (
+              <span style={{ color: '#BBB', fontWeight: 400, marginLeft: '0.375rem' }}>
+                ({favCourses.length})
+              </span>
+            )}
           </h2>
-          <Link href="/preferiti" style={{ fontSize: '13px', color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
-            {ta.dashboard.seeAll}
-          </Link>
+          {favCourses.length > 0 && (
+            <Link href="/preferiti" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
+              Vedi tutti →
+            </Link>
+          )}
         </div>
 
-        {favoriteCourses.length === 0 ? (
+        {favCourses.length === 0 ? (
           <div style={{
-            background: 'var(--surface)', borderRadius: '16px',
-            border: '1.5px dashed var(--border)', padding: '2rem 1.25rem',
+            margin: '0 1.25rem', background: '#fff', borderRadius: '16px',
+            border: '1.5px dashed #E5E5E5', padding: '2rem',
             textAlign: 'center',
           }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🔖</div>
-            <p style={{ fontSize: '14px', color: 'var(--text-2)', marginBottom: '1rem', lineHeight: 1.5 }}>
-              {ta.dashboard.noSaved}
-            </p>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔖</div>
+            <p style={{ fontSize: '13px', color: '#AAA', marginBottom: '1rem' }}>Nessun corso salvato ancora.</p>
             <Link href="/scopri">
               <button style={{
                 background: 'var(--accent)', color: '#fff', border: 'none',
                 borderRadius: '10px', padding: '0.625rem 1.25rem',
                 fontSize: '13px', fontWeight: 600, cursor: 'pointer',
               }}>
-                {ta.dashboard.startExploring}
+                Inizia a scoprire →
               </button>
             </Link>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            {favoriteCourses.slice(0, 3).map(c => {
-              const ts = TIPO_STYLE[c.tipo] ?? TIPO_STYLE.Triennale;
-              const mur = resolveUniversity(c.universita);
-              const slug = mur ? uniSlug(mur.name) : null;
-              return (
-                <div key={c.id} style={{
-                  background: 'var(--surface)', borderRadius: '12px',
-                  border: '1px solid var(--border)', padding: '0.875rem 1rem',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-1)', lineHeight: 1.35, flex: 1 }}>{c.nome}</span>
-                    <span style={{ fontSize: '10px', padding: '0.15rem 0.45rem', borderRadius: '5px', flexShrink: 0, fontWeight: 500, background: ts.bg, color: ts.text, border: `1px solid ${ts.border}` }}>
-                      {c.tipo}
-                    </span>
+          <>
+            {/* Scrollable cards */}
+            <div style={{
+              display: 'flex', gap: '0.75rem',
+              paddingLeft: '1.25rem', paddingRight: '1.25rem',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              WebkitOverflowScrolling: 'touch',
+            } as React.CSSProperties}>
+              {favCourses.slice(0, 8).map(c => {
+                const scores   = computeCourseScores(c, user);
+                const matchPct = getMatchPct(c, user);
+                const ts       = TIPO_STYLE[c.tipo] ?? TIPO_STYLE.Triennale;
+                const mur      = resolveUniversity(c.universita);
+                const slug     = mur ? uniSlug(mur.name) : null;
+
+                return (
+                  <div key={c.id} style={{
+                    flexShrink: 0, width: '155px',
+                    background: '#fff', borderRadius: '16px',
+                    border: '1px solid #EBEBEB',
+                    padding: '0.875rem',
+                    display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  }}>
+                    {/* Header row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{
+                        fontSize: '9px', fontWeight: 600,
+                        padding: '0.1rem 0.4rem', borderRadius: '20px',
+                        background: ts.bg, color: ts.text,
+                      }}>
+                        {c.tipo}
+                      </span>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent)' }}>
+                        {matchPct}%
+                      </span>
+                    </div>
+
+                    {/* Course name */}
+                    <div style={{
+                      fontSize: '11px', fontWeight: 600, color: '#111',
+                      lineHeight: 1.3, minHeight: '2.4em',
+                      display: '-webkit-box', WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    } as React.CSSProperties}>
+                      {c.nome}
+                    </div>
+
+                    {/* Pentagon */}
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <PentagonChart scores={scores} size={76} />
+                    </div>
+
+                    {/* Axis labels */}
+                    <div style={{
+                      display: 'flex', justifyContent: 'space-around',
+                      fontSize: '10px',
+                    }}>
+                      {['📍', '💰', '🎯', '🧠', '🚪'].map(e => (
+                        <span key={e}>{e}</span>
+                      ))}
+                    </div>
+
+                    {/* University link */}
+                    {slug && (
+                      <Link href={`/universita/${slug}`} style={{
+                        fontSize: '10px', color: 'var(--accent)',
+                        textDecoration: 'none', fontWeight: 500,
+                        whiteSpace: 'nowrap', overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}>
+                        🏛 {mur?.short_name?.slice(0, 18) ?? c.universita.slice(0, 18)}
+                      </Link>
+                    )}
                   </div>
-                  {slug ? (
-                    <Link href={`/universita/${slug}`} style={{ fontSize: '11px', color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}>
-                      {c.universita.length > 45 ? c.universita.slice(0, 43) + '…' : c.universita}
-                    </Link>
-                  ) : (
-                    <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>{c.universita}</span>
-                  )}
-                </div>
-              );
-            })}
-            {favoriteCourses.length > 3 && (
-              <Link href="/preferiti" style={{ textAlign: 'center', fontSize: '13px', color: 'var(--accent)', fontWeight: 500, textDecoration: 'none', padding: '0.5rem' }}>
-                {ta.dashboard.moreSaved(favoriteCourses.length - 3)}
-              </Link>
-            )}
-          </div>
+                );
+              })}
+            </div>
+
+            {/* Pentagon legend */}
+            <div style={{
+              padding: '0.625rem 1.25rem 0',
+              display: 'flex', gap: '0.875rem', flexWrap: 'wrap',
+            }}>
+              {[['📍', 'Geo'], ['💰', 'Costo'], ['🎯', 'Interessi'], ['🧠', 'Attitudine'], ['🚪', 'Accesso']].map(([icon, label]) => (
+                <span key={label} style={{ fontSize: '10px', color: '#BBB' }}>{icon} {label}</span>
+              ))}
+            </div>
+          </>
         )}
       </section>
 
+      {/* ── Prossimo step ── */}
+      <section style={{ padding: '0.875rem 1.25rem 0' }}>
+        <Link href={nextStep.href} style={{ textDecoration: 'none' }}>
+          <div style={{
+            background: 'var(--accent)', borderRadius: '20px',
+            padding: '1.25rem 1.5rem',
+            display: 'flex', alignItems: 'center', gap: '1rem',
+            boxShadow: '0 4px 20px rgba(27,94,82,0.25)',
+          }}>
+            <div style={{ fontSize: '1.875rem', flexShrink: 0 }}>{nextStep.icon}</div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '2px' }}>
+                PROSSIMO STEP
+              </p>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginBottom: '2px' }}>
+                {nextStep.title}
+              </h3>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.4 }}>
+                {nextStep.sub}
+              </p>
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '18px', flexShrink: 0 }}>→</div>
+          </div>
+        </Link>
+      </section>
+
+      {/* ── Studenti come te ── */}
+      <section style={{ padding: '0.875rem 1.25rem 0' }}>
+        <div style={{
+          background: '#fff', borderRadius: '20px', border: '1px solid #EBEBEB',
+          padding: '1.25rem',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+        }}>
+          <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: '0.875rem' }}>
+            Studenti come te
+          </h2>
+          <div style={{ textAlign: 'center', padding: '0.75rem 0' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👥</div>
+            <p style={{ fontSize: '13px', color: '#BBB', lineHeight: 1.6 }}>
+              Non ci sono ancora studenti del tuo tipo.
+            </p>
+            <p style={{ fontSize: '12px', color: '#999', lineHeight: 1.5, marginTop: '0.25rem' }}>
+              Presto troverai qui chi ha scelto percorsi simili al tuo.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ── Quick actions ── */}
-      <section style={{ padding: '0 1.25rem 2rem', display: 'flex', gap: '0.75rem' }}>
-        <Link href="/scopri" style={{ flex: 1, textDecoration: 'none' }}>
-          <div style={{
-            background: 'var(--accent)', borderRadius: '14px',
-            padding: '1.125rem', textAlign: 'center',
-          }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: '0.375rem' }}>❤️</div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>{ta.dashboard.quickActions.scopri}</div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>{ta.dashboard.quickActions.scopriSub}</div>
-          </div>
-        </Link>
-        <Link href="/persone" style={{ flex: 1, textDecoration: 'none' }}>
-          <div style={{
-            background: 'var(--surface)', borderRadius: '14px',
-            border: '1px solid var(--border)', padding: '1.125rem', textAlign: 'center',
-          }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: '0.375rem' }}>💬</div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-1)' }}>{ta.dashboard.quickActions.persone}</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '2px' }}>{ta.dashboard.quickActions.personeSub}</div>
-          </div>
-        </Link>
-        <Link href="/orientamento" style={{ flex: 1, textDecoration: 'none' }}>
-          <div style={{
-            background: 'var(--surface)', borderRadius: '14px',
-            border: '1px solid var(--border)', padding: '1.125rem', textAlign: 'center',
-          }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: '0.375rem' }}>🧭</div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-1)' }}>{ta.dashboard.quickActions.test}</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '2px' }}>{ta.dashboard.quickActions.testSub}</div>
-          </div>
-        </Link>
+      <section style={{ padding: '0.875rem 1.25rem 0', display: 'flex', gap: '0.625rem' }}>
+        {[
+          { href: '/scopri',      icon: '❤️', label: 'Scopri' },
+          { href: '/esplora',     icon: '🔍', label: 'Esplora' },
+          { href: '/orientamento',icon: '🧭', label: 'Test' },
+        ].map(({ href, icon, label }) => (
+          <Link key={href} href={href} style={{ flex: 1, textDecoration: 'none' }}>
+            <div style={{
+              background: '#fff', borderRadius: '14px',
+              border: '1px solid #EBEBEB', padding: '1rem',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '1.375rem', marginBottom: '0.25rem' }}>{icon}</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#111' }}>{label}</div>
+            </div>
+          </Link>
+        ))}
       </section>
     </div>
   );

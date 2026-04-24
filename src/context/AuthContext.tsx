@@ -12,6 +12,7 @@ export interface UserProfile {
   onboarded: boolean;
   favorites: number[];
   swipedIds: number[];
+  comparisonsCount: number;
   /**
    * Psycho-attitudinal dimension scores, 0–1 floats.
    * Populated progressively by orientation games and tests.
@@ -25,7 +26,7 @@ interface AuthCtx {
   user: UserProfile | null;
   login: (email: string, name: string) => void;
   logout: () => void;
-  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores'>) => void;
+  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount'>) => void;
   swipeRight: (id: number) => void;
   swipeLeft: (id: number) => void;
   addFavorite: (id: number) => void;
@@ -33,6 +34,7 @@ interface AuthCtx {
   markSwiped: (id: number) => void;
   updateScores: (newScores: Record<string, number>) => void;
   undoSwipe: (id: number, wasRight: boolean) => void;
+  trackComparison: () => void;
 }
 
 const AuthContext = createContext<AuthCtx>({
@@ -47,6 +49,7 @@ const AuthContext = createContext<AuthCtx>({
   markSwiped: () => {},
   updateScores: () => {},
   undoSwipe: () => {},
+  trackComparison: () => {},
 });
 
 const STORAGE_KEY = 'u2f_user';
@@ -69,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!Array.isArray(parsed.favorites)) parsed.favorites = [];
         if (!Array.isArray(parsed.swipedIds)) parsed.swipedIds = [];
         if (typeof parsed.scores !== 'object' || Array.isArray(parsed.scores)) parsed.scores = {};
+        if (typeof parsed.comparisonsCount !== 'number') parsed.comparisonsCount = 0;
         setUser(parsed);
       }
     } catch {}
@@ -90,13 +94,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: Math.random().toString(36).slice(2),
       name, email,
       areas: [], diploma: '', city: '', degreeType: '',
-      onboarded: false, favorites: [], swipedIds: [], scores: {},
+      onboarded: false, favorites: [], swipedIds: [], comparisonsCount: 0, scores: {},
     });
   };
 
   const logout = () => persist(null);
 
-  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores'>) => {
+  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount'>) => {
     if (!user) return;
     persist({ ...user, ...data, onboarded: true });
   };
@@ -142,8 +146,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist({ ...user, swipedIds, favorites });
   };
 
+  const trackComparison = () => {
+    if (!user) return;
+    persist({ ...user, comparisonsCount: (user.comparisonsCount ?? 0) + 1 });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores, undoSwipe }}>
+    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores, undoSwipe, trackComparison }}>
       {children}
     </AuthContext.Provider>
   );

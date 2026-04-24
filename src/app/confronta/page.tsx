@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { MILAN_COURSES, resolveUniversity, uniSlug } from '@/lib/data';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
 
 const TIPO_STYLE: Record<string, { text: string; bg: string }> = {
   Triennale:     { text: '#1D4ED8', bg: '#EFF6FF' },
@@ -58,6 +59,7 @@ function ConfruntaContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { t, lang } = useLanguage();
+  const { trackComparison } = useAuth();
   const tc = t.app.confronta;
   const ids = (searchParams.get('ids') ?? '').split(',').map(Number).filter(Boolean);
   const courses = MILAN_COURSES.filter(c => ids.includes(c.id));
@@ -70,6 +72,7 @@ function ConfruntaContent() {
   // Load initial AI overview
   useEffect(() => {
     if (courses.length < 2) return;
+    trackComparison();
     setIsLoading(true);
     let text = '';
     setMessages([{ role: 'ai', text: '' }]);
