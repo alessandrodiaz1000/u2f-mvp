@@ -26,7 +26,7 @@ const UNI_PHOTOS: Record<string, string> = {
 const FALLBACK_PHOTO = '/images/polimi.webp';
 
 export default function ScopriPage() {
-  const { user, swipeRight, swipeLeft } = useAuth();
+  const { user, swipeRight, swipeLeft, undoSwipe } = useAuth();
   const { t } = useLanguage();
   const ts2 = t.app.scopri;
   const router = useRouter();
@@ -41,6 +41,7 @@ export default function ScopriPage() {
   const [dragX, setDragX]       = useState(0);
   const [dragging, setDragging] = useState(false);
   const startX = useRef(0);
+  const [history, setHistory]   = useState<{ id: number; dir: 'left' | 'right' }[]>([]);
 
   const current = deck[idx];
   const next    = deck[idx + 1];
@@ -50,11 +51,20 @@ export default function ScopriPage() {
     setSwipeDir(dir);
     if (dir === 'right') swipeRight(current.id);
     else swipeLeft(current.id);
+    setHistory(h => [...h, { id: current.id, dir }]);
     setTimeout(() => {
       setIdx(i => i + 1);
       setSwipeDir(null);
       setDragX(0);
     }, 300);
+  };
+
+  const doUndo = () => {
+    if (history.length === 0) return;
+    const last = history[history.length - 1];
+    undoSwipe(last.id, last.dir === 'right');
+    setHistory(h => h.slice(0, -1));
+    setIdx(i => i - 1);
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -251,6 +261,15 @@ export default function ScopriPage() {
         display: 'flex', gap: '1.25rem', justifyContent: 'center', alignItems: 'center',
         background: '#F7F7F7', borderTop: '1px solid #EBEBEB',
       }}>
+        <button onClick={doUndo} disabled={history.length === 0} style={{
+          width: '52px', height: '52px', borderRadius: '50%',
+          background: '#fff', border: '1.5px solid #E5E5E5',
+          fontSize: '18px', cursor: history.length === 0 ? 'default' : 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          opacity: history.length === 0 ? 0.35 : 1,
+          transition: 'opacity 0.15s',
+        }}>↩</button>
         <button onClick={() => doSwipe('left')} style={{
           width: '60px', height: '60px', borderRadius: '50%',
           background: '#fff', border: '1.5px solid #E5E5E5',
@@ -267,7 +286,7 @@ export default function ScopriPage() {
         }}>❤️</button>
         <Link href="/preferiti">
           <button style={{
-            width: '60px', height: '60px', borderRadius: '50%',
+            width: '52px', height: '52px', borderRadius: '50%',
             background: '#fff', border: '1.5px solid #E5E5E5',
             fontSize: '20px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',

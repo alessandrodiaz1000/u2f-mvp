@@ -32,6 +32,7 @@ interface AuthCtx {
   removeFavorite: (id: number) => void;
   markSwiped: (id: number) => void;
   updateScores: (newScores: Record<string, number>) => void;
+  undoSwipe: (id: number, wasRight: boolean) => void;
 }
 
 const AuthContext = createContext<AuthCtx>({
@@ -45,6 +46,7 @@ const AuthContext = createContext<AuthCtx>({
   removeFavorite: () => {},
   markSwiped: () => {},
   updateScores: () => {},
+  undoSwipe: () => {},
 });
 
 const STORAGE_KEY = 'u2f_user';
@@ -128,15 +130,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist({ ...user, swipedIds: [...user.swipedIds, id] });
   };
 
-  // Merges new dimension scores into existing ones (orientation games call this)
   const updateScores = (newScores: Record<string, number>) => {
     if (!user) return;
     persist({ ...user, scores: { ...user.scores, ...newScores } });
   };
 
+  const undoSwipe = (id: number, wasRight: boolean) => {
+    if (!user) return;
+    const swipedIds = user.swipedIds.filter(s => s !== id);
+    const favorites = wasRight ? user.favorites.filter(f => f !== id) : user.favorites;
+    persist({ ...user, swipedIds, favorites });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores }}>
-      {children}
+    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores, undoSwipe }}>
     </AuthContext.Provider>
   );
 }
