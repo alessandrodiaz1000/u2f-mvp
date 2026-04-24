@@ -263,12 +263,12 @@ export default function ScopriPage() {
       }}>
         <button onClick={doUndo} disabled={history.length === 0} style={{
           width: '52px', height: '52px', borderRadius: '50%',
-          background: '#fff', border: '1.5px solid #E5E5E5',
-          fontSize: '18px', cursor: history.length === 0 ? 'default' : 'pointer',
+          background: '#fff', border: `1.5px solid ${history.length === 0 ? '#E5E5E5' : '#BBB'}`,
+          fontSize: '20px', cursor: history.length === 0 ? 'default' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          opacity: history.length === 0 ? 0.35 : 1,
-          transition: 'opacity 0.15s',
+          color: history.length === 0 ? '#CCC' : '#555',
+          transition: 'all 0.15s',
         }}>↩</button>
         <button onClick={() => doSwipe('left')} style={{
           width: '60px', height: '60px', borderRadius: '50%',
