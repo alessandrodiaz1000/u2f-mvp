@@ -77,12 +77,12 @@ export default function EsploraPage() {
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
 
-      {/* Header */}
+      {/* Header — sticky, contains search + filters for active tab */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 50,
         background: '#fff',
         borderBottom: '1px solid #F0F0F0',
-        padding: '1rem 1.25rem 0',
+        padding: '1rem 1.25rem 0.875rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
           <h1 style={{ fontSize: '17px', fontWeight: 700, color: '#111', letterSpacing: '-0.03em' }}>
@@ -92,10 +92,10 @@ export default function EsploraPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 0 }}>
+        <div style={{ display: 'flex', gap: 0, marginBottom: '0.875rem' }}>
           {([['uni', 'Università'], ['corsi', 'Corsi']] as [Tab, string][]).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
-              flex: 1, padding: '0.625rem 0', background: 'none', border: 'none',
+              flex: 1, padding: '0.5rem 0', background: 'none', border: 'none',
               fontSize: '14px', fontWeight: tab === key ? 600 : 400,
               color: tab === key ? 'var(--accent)' : '#999',
               borderBottom: `2px solid ${tab === key ? 'var(--accent)' : 'transparent'}`,
@@ -105,31 +105,39 @@ export default function EsploraPage() {
             </button>
           ))}
         </div>
-      </header>
 
-      {tab === 'uni' ? (
-        <div>
-          {/* Search */}
-          <div style={{ padding: '1rem 1.25rem 0' }}>
-            <div style={{ position: 'relative' }}>
-              <svg style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
-                width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#999" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Cerca università…"
-                style={{
-                  width: '100%', paddingLeft: '2.5rem', padding: '0.75rem 1rem 0.75rem 2.5rem',
-                  background: '#F7F7F7', border: '1px solid #EBEBEB', borderRadius: '12px',
-                  fontSize: '15px', color: '#111', outline: 'none',
-                }}
-              />
-            </div>
-          </div>
+        {/* Search bar */}
+        <div style={{ position: 'relative', marginBottom: '0.625rem' }}>
+          <svg style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+            width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#999" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {tab === 'uni' ? (
+            <input
+              type="text" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Cerca università…"
+              style={{
+                width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem',
+                background: '#F7F7F7', border: '1px solid #EBEBEB', borderRadius: '12px',
+                fontSize: '15px', color: '#111', outline: 'none',
+              }}
+            />
+          ) : (
+            <input
+              type="text" value={courseSearch} onChange={e => setCourseSearch(e.target.value)}
+              placeholder="Cerca corso o università…"
+              style={{
+                width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem',
+                background: '#F7F7F7', border: '1px solid #EBEBEB', borderRadius: '12px',
+                fontSize: '15px', color: '#111', outline: 'none',
+              }}
+            />
+          )}
+        </div>
 
-          {/* Filter chips */}
-          <div style={{ padding: '0.75rem 1.25rem 0', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+        {/* Filters */}
+        {tab === 'uni' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <div style={{ overflowX: 'auto', paddingBottom: '2px' }}>
               <div style={{ display: 'flex', gap: '0.5rem', width: 'max-content' }}>
                 {SUBJECT_CATEGORIES.map(area => {
@@ -141,14 +149,11 @@ export default function EsploraPage() {
                       background: active ? 'var(--accent)' : '#fff',
                       color: active ? '#fff' : '#555',
                       cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.12s',
-                    }}>
-                      {area}
-                    </button>
+                    }}>{area}</button>
                   );
                 })}
               </div>
             </div>
-
             <div style={{ overflowX: 'auto', paddingBottom: '2px' }}>
               <div style={{ display: 'flex', gap: '0.5rem', width: 'max-content' }}>
                 {DEGREE_TYPES.map(d => {
@@ -160,9 +165,7 @@ export default function EsploraPage() {
                       background: active ? 'var(--accent)' : '#fff',
                       color: active ? '#fff' : '#555',
                       cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.12s',
-                    }}>
-                      {d}
-                    </button>
+                    }}>{d}</button>
                   );
                 })}
                 {(['state', 'non_state'] as const).map(tv => {
@@ -175,24 +178,41 @@ export default function EsploraPage() {
                       background: active ? 'var(--accent)' : '#fff',
                       color: active ? '#fff' : '#555',
                       cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.12s',
-                    }}>
-                      {label}
-                    </button>
+                    }}>{label}</button>
                   );
                 })}
               </div>
             </div>
-
             {hasUniFilters && (
               <button onClick={resetUni} style={{
                 alignSelf: 'flex-start', fontSize: '12px', fontWeight: 500,
                 color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer',
                 padding: 0, textDecoration: 'underline',
-              }}>
-                Reset
-              </button>
+              }}>Reset</button>
             )}
           </div>
+        ) : (
+          <div style={{ overflowX: 'auto', paddingBottom: '2px' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', width: 'max-content' }}>
+              {['', ...DEGREE_TYPES].map(d => {
+                const active = courseType === d;
+                return (
+                  <button key={d || 'all'} onClick={() => setCourseType(d)} style={{
+                    padding: '0.35rem 0.875rem', borderRadius: '20px', fontSize: '13px', fontWeight: 500,
+                    border: `1px solid ${active ? 'var(--accent)' : '#E5E5E5'}`,
+                    background: active ? 'var(--accent)' : '#fff',
+                    color: active ? '#fff' : '#555',
+                    cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.12s',
+                  }}>{d || 'Tutti'}</button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </header>
+
+      {tab === 'uni' ? (
+        <div>
 
           {/* University list */}
           <div style={{ padding: '0.875rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -251,45 +271,6 @@ export default function EsploraPage() {
         </div>
       ) : (
         <div>
-          {/* Course search */}
-          <div style={{ padding: '1rem 1.25rem 0' }}>
-            <div style={{ position: 'relative' }}>
-              <svg style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
-                width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#999" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text" value={courseSearch} onChange={e => setCourseSearch(e.target.value)}
-                placeholder="Cerca corso o università…"
-                style={{
-                  width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem',
-                  background: '#F7F7F7', border: '1px solid #EBEBEB', borderRadius: '12px',
-                  fontSize: '15px', color: '#111', outline: 'none',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Degree type filter */}
-          <div style={{ padding: '0.75rem 1.25rem 0', overflowX: 'auto' }}>
-            <div style={{ display: 'flex', gap: '0.5rem', width: 'max-content' }}>
-              {['', ...DEGREE_TYPES].map(d => {
-                const active = courseType === d;
-                return (
-                  <button key={d || 'all'} onClick={() => setCourseType(d)} style={{
-                    padding: '0.35rem 0.875rem', borderRadius: '20px', fontSize: '13px', fontWeight: 500,
-                    border: `1px solid ${active ? 'var(--accent)' : '#E5E5E5'}`,
-                    background: active ? 'var(--accent)' : '#fff',
-                    color: active ? '#fff' : '#555',
-                    cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.12s',
-                  }}>
-                    {d || 'Tutti'}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Count */}
           <div style={{ padding: '0.75rem 1.25rem 0' }}>
             <span style={{ fontSize: '12px', color: '#999' }}>
