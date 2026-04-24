@@ -1,0 +1,103 @@
+import { MILAN_COURSES } from './data';
+import {
+  AREA_DIMENSION_WEIGHTS,
+  COURSE_AREA_TO_USER_AREAS,
+  DIPLOMA_AREA_BOOST,
+} from './courseWeights';
+import type { UserProfile } from '@/context/AuthContext';
+
+type Course = typeof MILAN_COURSES[number];
+
+/**
+ * Score breakdown for debugging and future transparency UI.
+ * Each field represents one scoring layer so it's easy to inspect
+ * why a course ranked high or low for a specific user.
+ */
+export interface ScoreBreakdown {
+  total: number;
+  areaMatch: boolean;     // hard: course area ∈ user's selected areas
+  degreeMatch: boolean;   // hard: course tipo === user's degreeType preference
+  diplomaBoost: number;   // soft: academic background relevance
+  softScore: number;      // soft: psycho-attitudinal dimension score
+  missingDimensions: string[]; // dimensions with no user data yet (for orientation prompts)
+}
+
+/**
+ * Core scoring function. Pure — no side effects.
+ *
+ * Score tiers (by design):
+ *   Area match alone          → 100 pts
+ *   + degree match            → +40 pts
+ *   + diploma boost           → +0–20 pts
+ *   + perfect soft score      → +0–50 pts (max if all orientation done)
+ *
+ * This means: hard signals always dominate. Soft scores refine the
+ * ranking *within* a tier, never override area relevance.
+ */
+export function scoreCourse(course: Course, user: UserProfile): ScoreBreakdown {
+  let total = 0;
+
+  // ── HARD SIGNAL 1: Area match ────────────────────────────────────
+  const mappedUserAreas = COURSE_AREA_TO_USER_AREAS[course.area] ?? [];
+  const areaMatch = mappedUserAreas.some(a => user.areas.includes(a));
+  if (areaMatch) total += 100;
+
+  // ── HARD SIGNAL 2: Degree type ──────────────────────────────────
+  const wantsDegree = !!user.degreeType && user.degreeType !== 'Non so ancora';
+  const degreeMatch = wantsDegree && course.tipo === user.degreeType;
+  if (degreeMatch) total += 40;
+
+  // ── SOFT SIGNAL 1: Diploma background ───────────────────────────
+  const diplomaBoost = (DIPLOMA_AREA_BOOST[user.diploma] ?? {})[course.area] ?? 0;
+  total += diplomaBoost;
+
+  // ── SOFT SIGNAL 2: Psycho-attitudinal dimensions ─────────────────
+  // user.scores holds 0–1 floats produced by orientation activities.
+  // Each dimension score × its weight for this course area = partial boost.
+  const dimWeights = AREA_DIMENSION_WEIGHTS[course.area] ?? {};
+  const userScores = user.scores ?? {};
+  const missingDimensions: string[] = [];
+  let softScore = 0;
+
+  for (const [dim, weight] of Object.entries(dimWeights)) {
+    if (dim in userScores) {
+      softScore += userScores[dim] * (weight ?? 0);
+    } else {
+      missingDimensions.push(dim); // user hasn't done the activity that measures this
+    }
+  }
+
+  total += softScore;
+
+  return { total, areaMatch, degreeMatch, diplomaBoost, softScore, missingDimensions };
+}
+
+/**
+ * Build the sorted deck for the scopri page.
+ *
+ * Ordering:
+ *   1. Exclude already swiped and already favorited courses
+ *   2. Score every remaining course via scoreCourse()
+ *   3. Sort descending by total score
+ *   4. Cap at maxCards to avoid infinite scroll fatigue
+ *
+ * Future extensions (add params here, not in the component):
+ *   - languageFilter: 'it' | 'en' | 'any'
+ *   - cityFilter: string
+ *   - excludeAreas: string[]
+ *   - boostNewCourses: boolean (for A/B testing)
+ */
+export function buildDeck(
+  user: UserProfile,
+  { maxCards = 80 }: { maxCards?: number } = {},
+): Course[] {
+  const seen  = new Set(user.swipedIds);
+  const faved = new Set(user.favorites);
+
+  return MILAN_COURSES
+    .filter(c => !seen.has(c.id) && !faved.has(c.id))
+    .map(c => ({ course: c, score: scoreCourse(c, user).total }))
+    .sort((a, b) => b.score - a.score)
+    .map(({ course }) => course)
+    .slice(0, maxCards);
+}

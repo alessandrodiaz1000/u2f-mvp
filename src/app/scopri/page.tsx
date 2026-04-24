@@ -3,7 +3,8 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { MILAN_COURSES, resolveUniversity, uniSlug, AREA_TO_SUBJECT } from '@/lib/data';
+import { resolveUniversity, uniSlug } from '@/lib/data';
+import { buildDeck } from '@/lib/scoring';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import Link from 'next/link';
 
@@ -32,17 +33,8 @@ export default function ScopriPage() {
 
   if (!user?.onboarded) { router.replace('/login'); return null; }
 
-  // ── Deck computed ONCE at mount — never recomputes ──────────────
-  const [deck] = useState(() => {
-    const seen  = new Set(user.swipedIds);
-    const faved = new Set(user.favorites);
-    const wantsDegree = user.degreeType && user.degreeType !== 'Non so ancora';
-    let pool = MILAN_COURSES.filter(c => !seen.has(c.id) && !faved.has(c.id));
-    if (wantsDegree) pool = pool.filter(c => c.tipo === user.degreeType);
-    const preferred = pool.filter(c => user.areas.includes(AREA_TO_SUBJECT[c.area]));
-    const rest      = pool.filter(c => !user.areas.includes(AREA_TO_SUBJECT[c.area]));
-    return [...preferred, ...rest].slice(0, 60);
-  });
+  // Deck computed once at mount via the scoring system
+  const [deck] = useState(() => buildDeck(user));
 
   const [idx, setIdx]           = useState(0);
   const [swipeDir, setSwipeDir] = useState<'left' | 'right' | null>(null);

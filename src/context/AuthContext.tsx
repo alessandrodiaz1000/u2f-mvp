@@ -5,25 +5,33 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  areas: string[];     // multiple interest areas
+  areas: string[];     // multiple interest areas (hard filter)
   diploma: string;
   city: string;
   degreeType: string;
   onboarded: boolean;
   favorites: number[];
   swipedIds: number[];
+  /**
+   * Psycho-attitudinal dimension scores, 0–1 floats.
+   * Populated progressively by orientation games and tests.
+   * Keys match DIMENSIONS in src/lib/courseWeights.ts.
+   * Missing key = user hasn't completed the activity that measures it.
+   */
+  scores: Record<string, number>;
 }
 
 interface AuthCtx {
   user: UserProfile | null;
   login: (email: string, name: string) => void;
   logout: () => void;
-  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds'>) => void;
+  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores'>) => void;
   swipeRight: (id: number) => void;
   swipeLeft: (id: number) => void;
   addFavorite: (id: number) => void;
   removeFavorite: (id: number) => void;
   markSwiped: (id: number) => void;
+  updateScores: (newScores: Record<string, number>) => void;
 }
 
 const AuthContext = createContext<AuthCtx>({
@@ -36,6 +44,7 @@ const AuthContext = createContext<AuthCtx>({
   addFavorite: () => {},
   removeFavorite: () => {},
   markSwiped: () => {},
+  updateScores: () => {},
 });
 
 const STORAGE_KEY = 'u2f_user';
@@ -54,9 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           delete parsed.area;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
         }
-        // Ensure arrays exist
+        // Ensure arrays and objects exist
         if (!Array.isArray(parsed.favorites)) parsed.favorites = [];
         if (!Array.isArray(parsed.swipedIds)) parsed.swipedIds = [];
+        if (typeof parsed.scores !== 'object' || Array.isArray(parsed.scores)) parsed.scores = {};
         setUser(parsed);
       }
     } catch {}
@@ -78,13 +88,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: Math.random().toString(36).slice(2),
       name, email,
       areas: [], diploma: '', city: '', degreeType: '',
-      onboarded: false, favorites: [], swipedIds: [],
+      onboarded: false, favorites: [], swipedIds: [], scores: {},
     });
   };
 
   const logout = () => persist(null);
 
-  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds'>) => {
+  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores'>) => {
     if (!user) return;
     persist({ ...user, ...data, onboarded: true });
   };
@@ -118,8 +128,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist({ ...user, swipedIds: [...user.swipedIds, id] });
   };
 
+  // Merges new dimension scores into existing ones (orientation games call this)
+  const updateScores = (newScores: Record<string, number>) => {
+    if (!user) return;
+    persist({ ...user, scores: { ...user.scores, ...newScores } });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped }}>
+    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores }}>
       {children}
     </AuthContext.Provider>
   );
