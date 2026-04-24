@@ -4,8 +4,6 @@ import { useMemo, useState } from 'react';
 import { getMurBySlug, getCoursesForMur, DOCTORAL_ONLY } from '@/lib/data';
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { use } from 'react';
-
 const TIPO_STYLE: Record<string, { text: string; bg: string; border: string }> = {
   Triennale:     { text: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
   Magistrale:    { text: '#065F46', bg: '#ECFDF5', border: '#A7F3D0' },
@@ -14,8 +12,8 @@ const TIPO_STYLE: Record<string, { text: string; bg: string; border: string }> =
 
 const DEGREE_TYPES = ['Triennale', 'Magistrale', 'Ciclo Unico'];
 
-export default function UniversityPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function UniversityPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const { t } = useLanguage();
   const [search, setSearch]               = useState('');
   const [selectedDegrees, setSelectedDegrees] = useState<string[]>([]);
