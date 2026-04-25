@@ -20,13 +20,14 @@ export interface UserProfile {
   uniPreference: 'pubblica' | 'privata' | 'indifferente' | '';
   langPreference: 'italiano' | 'inglese' | 'indifferente' | '';
   gradeAvg: 'lt7' | '7to8' | '8to9' | '9to10' | '';
+  startYear: '2025' | '2026' | '2027' | '2028' | '';
 }
 
 interface AuthCtx {
   user: UserProfile | null;
   login: (email: string, name: string) => void;
   logout: () => void;
-  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg'>) => void;
+  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg' | 'startYear'>) => void;
   swipeRight: (id: number) => void;
   swipeLeft: (id: number) => void;
   addFavorite: (id: number) => void;
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!parsed.uniPreference)  parsed.uniPreference  = '';
         if (!parsed.langPreference) parsed.langPreference = '';
         if (!parsed.gradeAvg)       parsed.gradeAvg       = '';
+        if (!parsed.startYear)      parsed.startYear      = '';
         setUser(parsed);
       }
     } catch {}
@@ -98,13 +100,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name, email,
       areas: [], diploma: '', city: '', degreeType: '',
       onboarded: false, favorites: [], swipedIds: [], comparisonsCount: 0, scores: {},
-      uniPreference: '', langPreference: '', gradeAvg: '',
+      uniPreference: '', langPreference: '', gradeAvg: '', startYear: '',
     });
   };
 
   const logout = () => persist(null);
 
-  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg'>) => {
+  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg' | 'startYear'>) => {
     if (!user) return;
     persist({ ...user, ...data, onboarded: true });
   };

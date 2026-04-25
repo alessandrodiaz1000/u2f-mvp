@@ -265,6 +265,17 @@ const PROFILE_FIELDS = [
       { value: '9to10', label: '9 – 10', sub: 'Approssimativa' },
     ],
   },
+  {
+    key: 'startYear' as const,
+    icon: '🎓',
+    label: 'Anno di inizio università',
+    options: [
+      { value: '2025', label: '2025/26', sub: 'Inizierai o hai iniziato quest\'anno' },
+      { value: '2026', label: '2026/27', sub: 'Inizierai il prossimo anno' },
+      { value: '2027', label: '2027/28', sub: 'Tra due anni' },
+      { value: '2028', label: '2028/29', sub: 'Tra tre anni' },
+    ],
+  },
 ] as const;
 
 type ProfileFieldKey = typeof PROFILE_FIELDS[number]['key'];
@@ -517,7 +528,7 @@ export default function DashboardPage() {
             <div>
               <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>Completa il profilo</h2>
               <p style={{ fontSize: '11px', color: '#BBB', marginTop: '1px' }}>
-                {[user.uniPreference, user.langPreference, user.gradeAvg].filter(Boolean).length} / {PROFILE_FIELDS.length} compilati
+                {[user.uniPreference, user.langPreference, user.gradeAvg, user.startYear].filter(Boolean).length} / {PROFILE_FIELDS.length} compilati
               </p>
             </div>
             <div style={{ display: 'flex', gap: '3px' }}>
