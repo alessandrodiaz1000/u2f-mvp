@@ -68,3 +68,25 @@ export function isUrgent(dateStr: string | null, days = 30): boolean {
   const diff = new Date(dateStr).getTime() - Date.now();
   return diff > 0 && diff < days * 86_400_000;
 }
+
+/** Days remaining until a deadline (negative = already passed). */
+export function daysUntil(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return Math.ceil((d.getTime() - Date.now()) / 86_400_000);
+}
+
+/** All test types available for a given university (for the university page). */
+export function getUniAdmissionEntries(universita: string): { testType: string; info: AdmissionInfo }[] {
+  const uniInfo = admissionInfo[universita];
+  if (!uniInfo) return [];
+  return Object.entries(uniInfo)
+    .filter(([key]) => key !== '_all')
+    .map(([testType, info]) => ({ testType, info }))
+    .sort((a, b) => {
+      const da = a.info.enrollment_close ?? '9999';
+      const db = b.info.enrollment_close ?? '9999';
+      return da.localeCompare(db);
+    });
+}

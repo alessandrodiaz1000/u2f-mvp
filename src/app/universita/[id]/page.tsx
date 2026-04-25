@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { getMurBySlug, getCoursesForMur, DOCTORAL_ONLY } from '@/lib/data';
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { getUniAdmissionEntries, formatDeadline, daysUntil } from '@/lib/admissions';
 const TIPO_STYLE: Record<string, { text: string; bg: string; border: string }> = {
   Triennale:     { text: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
   Magistrale:    { text: '#065F46', bg: '#ECFDF5', border: '#A7F3D0' },
@@ -46,6 +47,7 @@ export default function UniversityPage({ params }: { params: { id: string } }) {
 
   const isDoctoralOnly = DOCTORAL_ONLY.has(uni.mur_code);
   const isState = uni.public_private === 'state';
+  const admissionEntries = getUniAdmissionEntries(uni.name);
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -117,6 +119,82 @@ export default function UniversityPage({ params }: { params: { id: string } }) {
           )}
         </div>
       </section>
+
+      {/* ── Admission info section ── */}
+      {admissionEntries.length > 0 && (
+        <section style={{ padding: '0 1.25rem 1.5rem' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-1)', letterSpacing: '-0.02em', marginBottom: '0.75rem' }}>
+            Ammissione
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+            {admissionEntries.map(({ testType, info }) => {
+              const days = daysUntil(info.enrollment_close);
+              const closeLabel = formatDeadline(info.enrollment_close);
+              const isUrgentDeadline = days !== null && days >= 0 && days <= 30;
+              return (
+                <div key={testType} style={{
+                  background: 'var(--surface)', borderRadius: '14px',
+                  border: `1px solid ${isUrgentDeadline ? '#FDE68A' : 'var(--border)'}`,
+                  padding: '0.875rem 1rem',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{
+                      fontSize: '12px', fontWeight: 700,
+                      color: testType === 'Nessuno' ? '#555' : '#92400E',
+                      background: testType === 'Nessuno' ? '#F5F5F5' : 'rgba(251,191,36,0.15)',
+                      padding: '0.25rem 0.625rem', borderRadius: '6px',
+                    }}>
+                      {testType === 'Nessuno' ? '✓ Accesso libero' : `📝 ${testType}`}
+                    </span>
+                    {closeLabel && (
+                      <span style={{
+                        fontSize: '11px', fontWeight: 600,
+                        color: isUrgentDeadline ? '#B45309' : 'var(--text-3)',
+                      }}>
+                        {days !== null && days >= 0 ? `${days}g ` : ''}{closeLabel}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+                    {info.enrollment_open && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>
+                        Apertura <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{formatDeadline(info.enrollment_open)}</span>
+                      </div>
+                    )}
+                    {info.tolc_last_valid && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>
+                        TOLC entro <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{formatDeadline(info.tolc_last_valid)}</span>
+                      </div>
+                    )}
+                    {info.results_date && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>
+                        Esiti <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{formatDeadline(info.results_date)}</span>
+                      </div>
+                    )}
+                  </div>
+                  {info.note && (
+                    <p style={{ fontSize: '10px', color: 'var(--text-3)', marginTop: '0.5rem', lineHeight: 1.5 }}>
+                      {info.note}
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', gap: '0.875rem', marginTop: '0.5rem' }}>
+                    {info.test_url && (
+                      <a href={info.test_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
+                        Info {testType} →
+                      </a>
+                    )}
+                    {info.bando_url && (
+                      <a href={info.bando_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
+                        Bando →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ── Doctoral-only notice ── */}
       {isDoctoralOnly && (

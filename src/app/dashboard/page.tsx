@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { MILAN_COURSES, resolveUniversity, uniSlug } from '@/lib/data';
 import { scoreCourse } from '@/lib/scoring';
+import { getAdmissionInfo, formatDeadline, daysUntil } from '@/lib/admissions';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { U2FLogo } from '@/components/U2FLogo';
 import type { Course } from '@/lib/data';
@@ -103,6 +104,46 @@ function getNextStep(user: UserProfile): { icon: string; title: string; sub: str
   if (Object.keys(user.scores ?? {}).length === 0)
     return { icon: '🧭', title: 'Scopri chi sei', sub: 'Fai il test di orientamento per affinare il tuo profilo', href: '/orientamento' };
   return { icon: '📅', title: 'Segna le scadenze', sub: 'Controlla le date di ammissione che ti interessano', href: '/esplora' };
+}
+
+// ── Scadenze from saved courses ───────────────────────────────────────
+interface Scadenza {
+  key: string;
+  uniShort: string;
+  test: string;
+  daysLeft: number;
+  dateLabel: string | null;
+  bando_url: string | null;
+}
+
+function computeScadenze(user: UserProfile): Scadenza[] {
+  const favCourses = MILAN_COURSES.filter(c => user.favorites.includes(c.id));
+  const seen = new Set<string>();
+  const result: Scadenza[] = [];
+
+  for (const c of favCourses) {
+    const info = getAdmissionInfo(c.universita, c.classe);
+    if (!info?.enrollment_close) continue;
+
+    const key = `${c.universita}__${info.test}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const days = daysUntil(info.enrollment_close);
+    if (days === null || days < -14) continue; // skip if passed more than 2 weeks ago
+
+    const mur = resolveUniversity(c.universita);
+    result.push({
+      key,
+      uniShort: mur?.short_name ?? c.universita.split(' ').slice(0, 3).join(' '),
+      test: info.test,
+      daysLeft: days,
+      dateLabel: formatDeadline(info.enrollment_close, 'it'),
+      bando_url: info.bando_url,
+    });
+  }
+
+  return result.sort((a, b) => a.daysLeft - b.daysLeft);
 }
 
 // ── Pentagon SVG ──────────────────────────────────────────────────────
@@ -244,6 +285,7 @@ export default function DashboardPage() {
   const clarityScore = computeClarity(user);
   const direction    = computeDirection(user);
   const nextStep     = getNextStep(user);
+  const scadenze     = computeScadenze(user);
 
   const clarityLabel =
     clarityScore >= 70 ? 'Ottima chiarezza!' :
@@ -555,6 +597,85 @@ export default function DashboardPage() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* ── Le tue scadenze ── */}
+      <section style={{ padding: '0.875rem 1.25rem 0' }}>
+        <div style={{
+          background: '#fff', borderRadius: '20px', border: '1px solid #EBEBEB',
+          overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+        }}>
+          <div style={{ padding: '1rem 1.25rem 0.875rem', borderBottom: '1px solid #F5F5F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>Le tue scadenze</h2>
+            {scadenze.length > 0 && scadenze[0].daysLeft >= 0 && (
+              <span style={{ fontSize: '11px', color: scadenze[0].daysLeft <= 30 ? '#EF4444' : '#1B5E52', fontWeight: 600 }}>
+                Prima: {scadenze[0].daysLeft} gg
+              </span>
+            )}
+          </div>
+
+          {scadenze.length === 0 ? (
+            <div style={{ padding: '1.5rem 1.25rem', textAlign: 'center' }}>
+              <p style={{ fontSize: '13px', color: '#BBB', lineHeight: 1.6 }}>
+                {favCourses.length === 0
+                  ? 'Salva dei corsi per vedere le scadenze di ammissione.'
+                  : 'Nessuna scadenza disponibile per i corsi salvati.'}
+              </p>
+            </div>
+          ) : (
+            scadenze.map((s, i) => {
+              const passed = s.daysLeft < 0;
+              const urgent = !passed && s.daysLeft <= 30;
+              const dotColor = passed ? '#E5E5E5' : urgent ? '#EF4444' : '#1B5E52';
+              return (
+                <div key={s.key} style={{
+                  padding: '0.875rem 1.25rem',
+                  borderBottom: i < scadenze.length - 1 ? '1px solid #F5F5F5' : 'none',
+                  display: 'flex', alignItems: 'center', gap: '0.875rem',
+                }}>
+                  {/* Countdown bubble */}
+                  <div style={{
+                    width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0,
+                    background: passed ? '#F5F5F5' : urgent ? '#FFF1F1' : '#F0FDF4',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {passed ? (
+                      <span style={{ fontSize: '16px', color: '#CCC' }}>✓</span>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: dotColor, lineHeight: 1 }}>{s.daysLeft}</span>
+                        <span style={{ fontSize: '8px', color: dotColor, fontWeight: 500 }}>giorni</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#222', marginBottom: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {s.uniShort}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 600, padding: '0.1rem 0.4rem', borderRadius: '4px', background: '#F0F0F0', color: '#555' }}>
+                        {s.test}
+                      </span>
+                      <span style={{ fontSize: '11px', color: passed ? '#CCC' : '#999' }}>
+                        {passed ? 'scaduta' : `Scade ${s.dateLabel}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bando link */}
+                  {s.bando_url && !passed && (
+                    <a href={s.bando_url} target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize: '11px', color: '#1B5E52', fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
+                      Bando →
+                    </a>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
 
