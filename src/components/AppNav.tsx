@@ -111,7 +111,7 @@ export function AppNav() {
           );
         })}
 
-        <button onClick={toggle} title="Passa alla barra in basso" style={{
+        <button onClick={toggle} className="nav-layout-toggle" title="Passa alla barra in basso" style={{
           marginTop: 'auto',
           display: 'flex', alignItems: 'center', gap: '0.75rem',
           padding: '0.6rem 0.75rem',
@@ -156,7 +156,7 @@ export function AppNav() {
           );
         })}
 
-        <button onClick={toggle} title="Passa alla sidebar" style={{
+        <button onClick={toggle} className="nav-layout-toggle" title="Passa alla sidebar" style={{
           flex: 1, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
           gap: '2px', padding: '0.5rem 0',
