@@ -112,12 +112,36 @@ export function buildDeck(
   const faved = new Set(user.favorites);
   const wantsDegree = user.degreeType && user.degreeType !== 'Non so ancora';
 
+  // Compute direction from ALL areaScores of saved courses (same logic as dashboard)
+  const dirTotals: Record<string, number> = {};
+  for (const c of MILAN_COURSES.filter(c => faved.has(c.id))) {
+    for (const [area, score] of Object.entries(c.areaScores ?? {})) {
+      dirTotals[area] = (dirTotals[area] ?? 0) + score;
+    }
+  }
+  // Top 3 direction areas, normalized weight 1 / (rank+1): 1, 0.5, 0.33
+  const dirTop3 = Object.entries(dirTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
   return MILAN_COURSES
     .filter(c => !seen.has(c.id) && !faved.has(c.id))
-    // Hard filter: degree type is always enforced when the user has a preference
     .filter(c => !wantsDegree || c.tipo === user.degreeType)
-    // Add small random jitter so equal-score courses don't stay in dataset order
-    .map(c => ({ course: c, score: scoreCourse(c, user).total + Math.random() * 5 }))
+    .map(c => {
+      const base = scoreCourse(c, user).total;
+
+      // Direction boost: how well this course matches where saved courses cluster
+      // Max contribution ~27 pts — soft signal, doesn't override area match
+      const dirBoost = dirTop3.reduce((sum, [area, _], rank) => {
+        const courseScore = (c.areaScores[area] ?? 0) / 10; // 0–1
+        return sum + courseScore * (1 / (rank + 1)) * 15;
+      }, 0);
+
+      // Higher jitter (was 5) → more variety among similarly-scored courses
+      const jitter = Math.random() * 20;
+
+      return { course: c, score: base + dirBoost + jitter };
+    })
     .sort((a, b) => b.score - a.score)
     .map(({ course }) => course)
     .slice(0, maxCards);
