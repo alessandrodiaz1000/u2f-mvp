@@ -114,15 +114,18 @@ interface Scadenza {
   daysLeft: number;
   dateLabel: string | null;
   bando_url: string | null;
+  estimated: boolean;
+  sourceYear: string;
 }
 
 function computeScadenze(user: UserProfile): Scadenza[] {
+  const targetYear = user.startYear || String(new Date().getFullYear());
   const favCourses = MILAN_COURSES.filter(c => user.favorites.includes(c.id));
   const seen = new Set<string>();
   const result: Scadenza[] = [];
 
   for (const c of favCourses) {
-    const info = getAdmissionInfo(c.universita, c.classe);
+    const info = getAdmissionInfo(c.universita, c.classe, targetYear);
     if (!info?.enrollment_close) continue;
 
     const key = `${c.universita}__${info.test}`;
@@ -140,6 +143,8 @@ function computeScadenze(user: UserProfile): Scadenza[] {
       daysLeft: days,
       dateLabel: formatDeadline(info.enrollment_close, 'it'),
       bando_url: info.bando_url,
+      estimated: info.estimated ?? false,
+      sourceYear: info.sourceYear ?? targetYear,
     });
   }
 
@@ -618,7 +623,14 @@ export default function DashboardPage() {
           overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
         }}>
           <div style={{ padding: '1rem 1.25rem 0.875rem', borderBottom: '1px solid #F5F5F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>Le tue scadenze</h2>
+            <div>
+              <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>Le tue scadenze</h2>
+              {scadenze.length > 0 && scadenze.some(s => s.estimated) && (
+                <p style={{ fontSize: '10px', color: '#BBB', marginTop: '2px' }}>
+                  📅 Basate su {scadenze.find(s => s.estimated)?.sourceYear} — il bando {user.startYear} non è ancora uscito
+                </p>
+              )}
+            </div>
             {scadenze.length > 0 && scadenze[0].daysLeft >= 0 && (
               <span style={{ fontSize: '11px', color: scadenze[0].daysLeft <= 30 ? '#EF4444' : '#1B5E52', fontWeight: 600 }}>
                 Prima: {scadenze[0].daysLeft} gg

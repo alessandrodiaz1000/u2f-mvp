@@ -10,50 +10,82 @@ export interface AdmissionInfo {
   results_date: string | null;
   bando_url: string | null;
   note: string | null;
+  // Set at lookup time, not stored in JSON
+  estimated?: boolean;
+  sourceYear?: string;
 }
 
-const admissionInfo = admissionInfoRaw as Record<string, Record<string, AdmissionInfo>>;
+// JSON shape: university → year → testType → AdmissionInfo
+const admissionInfo = admissionInfoRaw as Record<string, Record<string, Record<string, AdmissionInfo>>>;
 const classeToTest = classeToTestRaw as Record<string, string>;
 
-// Case-insensitive lookup map: lowercase(uni name) → canonical key
+// Case-insensitive university name lookup
 const uniLowerMap = new Map<string, string>(
   Object.keys(admissionInfo).map(k => [k.toLowerCase(), k])
 );
 
-// Strip trailing " R" suffix used in post-reform class names (es. "L-8 R" → "L-8")
 function normalizeClasse(classe: string): string {
   return classe.replace(/\s+R$/, '').trim();
 }
 
-/**
- * Returns admission info for a course using a 3-level cascade:
- * 1. Direct classe match (for private unis with per-class overrides)
- * 2. TOLC type derived from classe (for public unis)
- * 3. "_all" wildcard (for unis where all courses share the same process)
- */
-export function getAdmissionInfo(universita: string, classe: string): AdmissionInfo | null {
-  const canonicalKey = admissionInfo[universita]
+function resolveUniKey(universita: string): string | null {
+  return admissionInfo[universita]
     ? universita
     : (uniLowerMap.get(universita.toLowerCase()) ?? null);
-  const uniInfo = canonicalKey ? admissionInfo[canonicalKey] : null;
-  if (!uniInfo) return null;
+}
 
+/**
+ * Returns admission info for a course, year-aware.
+ *
+ * Year resolution:
+ *   1. Try targetYear exactly
+ *   2. Fall back to most recent available year → marks info.estimated = true
+ *
+ * Within each year, uses a 3-level cascade:
+ *   1. Direct classe key (for private unis with per-class overrides)
+ *   2. TOLC type derived from classe
+ *   3. "_all" wildcard
+ */
+export function getAdmissionInfo(
+  universita: string,
+  classe: string,
+  targetYear?: string,
+): AdmissionInfo | null {
+  const uniKey = resolveUniKey(universita);
+  if (!uniKey) return null;
+
+  const uniYears = admissionInfo[uniKey];
+  const availableYears = Object.keys(uniYears).sort();
+  if (availableYears.length === 0) return null;
+
+  // Pick year: prefer exact match, else most recent
+  const year = targetYear && uniYears[targetYear]
+    ? targetYear
+    : availableYears[availableYears.length - 1];
+  const estimated = !targetYear || year !== targetYear;
+
+  const uniInfo = uniYears[year];
   const normalized = normalizeClasse(classe);
 
-  // Level 1: direct classe key
-  if (uniInfo[normalized]) return uniInfo[normalized];
+  let info: AdmissionInfo | null = null;
 
-  // Level 2: lookup test type from classe, then find by test type
-  const testType = classeToTest[normalized];
-  if (testType && uniInfo[testType]) return uniInfo[testType];
+  if (uniInfo[normalized]) {
+    info = uniInfo[normalized];
+  } else {
+    const testType = classeToTest[normalized];
+    if (testType && uniInfo[testType]) {
+      info = uniInfo[testType];
+    } else if (uniInfo['_all']) {
+      info = uniInfo['_all'];
+    } else if (testType === 'Nessuno' && uniInfo['Nessuno']) {
+      info = uniInfo['Nessuno'];
+    }
+  }
 
-  // Level 3: wildcard
-  if (uniInfo['_all']) return uniInfo['_all'];
+  if (!info) return null;
 
-  // Fall back to "Nessuno" entry if the class maps to no test
-  if (testType === 'Nessuno' && uniInfo['Nessuno']) return uniInfo['Nessuno'];
-
-  return null;
+  // Attach metadata without mutating the original object
+  return { ...info, estimated, sourceYear: year };
 }
 
 /** Returns just the test name for a quick badge label. */
@@ -85,16 +117,28 @@ export function daysUntil(dateStr: string | null): number | null {
   return Math.ceil((d.getTime() - Date.now()) / 86_400_000);
 }
 
-/** All test types available for a given university (for the university page). */
-export function getUniAdmissionEntries(universita: string): { testType: string; info: AdmissionInfo }[] {
-  const canonicalKey = admissionInfo[universita]
-    ? universita
-    : (uniLowerMap.get(universita.toLowerCase()) ?? null);
-  const uniInfo = canonicalKey ? admissionInfo[canonicalKey] : null;
-  if (!uniInfo) return [];
+/** All test types available for a given university and year (for the university page). */
+export function getUniAdmissionEntries(
+  universita: string,
+  targetYear?: string,
+): { testType: string; info: AdmissionInfo }[] {
+  const uniKey = resolveUniKey(universita);
+  if (!uniKey) return [];
+
+  const uniYears = admissionInfo[uniKey];
+  const availableYears = Object.keys(uniYears).sort();
+  if (availableYears.length === 0) return [];
+
+  const year = targetYear && uniYears[targetYear]
+    ? targetYear
+    : availableYears[availableYears.length - 1];
+  const estimated = !targetYear || year !== targetYear;
+
+  const uniInfo = uniYears[year];
+
   return Object.entries(uniInfo)
     .filter(([key]) => key !== '_all')
-    .map(([testType, info]) => ({ testType, info }))
+    .map(([testType, info]) => ({ testType, info: { ...info, estimated, sourceYear: year } }))
     .sort((a, b) => {
       const da = a.info.enrollment_close ?? '9999';
       const db = b.info.enrollment_close ?? '9999';
