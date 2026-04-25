@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { NavPreferenceProvider } from '@/context/NavPreferenceContext';
 import { AppShell } from '@/components/AppShell';
 import { Analytics } from '@vercel/analytics/next';
 
@@ -27,7 +28,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           <LanguageProvider>
-            <AppShell>{children}</AppShell>
+            <NavPreferenceProvider>
+              <AppShell>{children}</AppShell>
+            </NavPreferenceProvider>
           </LanguageProvider>
         </AuthProvider>
         <Analytics />
