@@ -5,7 +5,7 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  areas: string[];     // multiple interest areas (hard filter)
+  areas: string[];
   diploma: string;
   city: string;
   degreeType: string;
@@ -13,20 +13,20 @@ export interface UserProfile {
   favorites: number[];
   swipedIds: number[];
   comparisonsCount: number;
-  /**
-   * Psycho-attitudinal dimension scores, 0–1 floats.
-   * Populated progressively by orientation games and tests.
-   * Keys match DIMENSIONS in src/lib/courseWeights.ts.
-   * Missing key = user hasn't completed the activity that measures it.
-   */
   scores: Record<string, number>;
+
+  // ── Progressive profile fields ─────────────────────────────────────
+  // Add new optional fields here; always migrate in useEffect below.
+  uniPreference: 'pubblica' | 'privata' | 'indifferente' | '';
+  langPreference: 'italiano' | 'inglese' | 'indifferente' | '';
+  gradeAvg: 'lt7' | '7to8' | '8to9' | '9to10' | '';
 }
 
 interface AuthCtx {
   user: UserProfile | null;
   login: (email: string, name: string) => void;
   logout: () => void;
-  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount'>) => void;
+  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg'>) => void;
   swipeRight: (id: number) => void;
   swipeLeft: (id: number) => void;
   addFavorite: (id: number) => void;
@@ -35,6 +35,7 @@ interface AuthCtx {
   updateScores: (newScores: Record<string, number>) => void;
   undoSwipe: (id: number, wasRight: boolean) => void;
   trackComparison: () => void;
+  updateProfile: (data: Partial<UserProfile>) => void;
 }
 
 const AuthContext = createContext<AuthCtx>({
@@ -50,6 +51,7 @@ const AuthContext = createContext<AuthCtx>({
   updateScores: () => {},
   undoSwipe: () => {},
   trackComparison: () => {},
+  updateProfile: () => {},
 });
 
 const STORAGE_KEY = 'u2f_user';
@@ -68,11 +70,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           delete parsed.area;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
         }
-        // Ensure arrays and objects exist
-        if (!Array.isArray(parsed.favorites)) parsed.favorites = [];
-        if (!Array.isArray(parsed.swipedIds)) parsed.swipedIds = [];
+        // Ensure core arrays / objects exist
+        if (!Array.isArray(parsed.favorites))   parsed.favorites = [];
+        if (!Array.isArray(parsed.swipedIds))   parsed.swipedIds = [];
         if (typeof parsed.scores !== 'object' || Array.isArray(parsed.scores)) parsed.scores = {};
         if (typeof parsed.comparisonsCount !== 'number') parsed.comparisonsCount = 0;
+        // Progressive profile fields — add migration for every new field here
+        if (!parsed.uniPreference)  parsed.uniPreference  = '';
+        if (!parsed.langPreference) parsed.langPreference = '';
+        if (!parsed.gradeAvg)       parsed.gradeAvg       = '';
         setUser(parsed);
       }
     } catch {}
@@ -86,26 +92,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (email: string, name: string) => {
     const existing = localStorage.getItem(STORAGE_KEY);
-    if (existing) {
-      persist(JSON.parse(existing));
-      return;
-    }
+    if (existing) { persist(JSON.parse(existing)); return; }
     persist({
       id: Math.random().toString(36).slice(2),
       name, email,
       areas: [], diploma: '', city: '', degreeType: '',
       onboarded: false, favorites: [], swipedIds: [], comparisonsCount: 0, scores: {},
+      uniPreference: '', langPreference: '', gradeAvg: '',
     });
   };
 
   const logout = () => persist(null);
 
-  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount'>) => {
+  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg'>) => {
     if (!user) return;
     persist({ ...user, ...data, onboarded: true });
   };
 
-  // Atomic swipe: both favorite + swiped in one persist to avoid stale closure overwrites
   const swipeRight = (id: number) => {
     if (!user) return;
     const favorites = user.favorites.includes(id) ? user.favorites : [...user.favorites, id];
@@ -151,8 +154,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist({ ...user, comparisonsCount: (user.comparisonsCount ?? 0) + 1 });
   };
 
+  const updateProfile = (data: Partial<UserProfile>) => {
+    if (!user) return;
+    persist({ ...user, ...data });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores, undoSwipe, trackComparison }}>
+    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores, undoSwipe, trackComparison, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
