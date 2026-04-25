@@ -76,11 +76,14 @@ function computeClarity(user: UserProfile): number {
 
 function computeDirection(user: UserProfile): { area: string; pct: number }[] {
   const favCourses = MILAN_COURSES.filter(c => user.favorites.includes(c.id));
-  if (favCourses.length === 0 || user.areas.length === 0) return [];
+  if (favCourses.length === 0) return [];
 
+  // Sum areaScores across ALL areas from ALL saved courses, not just user.areas
   const totals: Record<string, number> = {};
-  for (const a of user.areas) {
-    totals[a] = favCourses.reduce((sum, c) => sum + ((c.areaScores[a] ?? 0)), 0);
+  for (const c of favCourses) {
+    for (const [area, score] of Object.entries(c.areaScores ?? {})) {
+      totals[area] = (totals[area] ?? 0) + score;
+    }
   }
   const max = Math.max(...Object.values(totals), 1);
   return Object.entries(totals)
