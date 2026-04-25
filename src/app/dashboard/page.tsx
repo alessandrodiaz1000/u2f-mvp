@@ -98,24 +98,24 @@ function getNextStep(user: UserProfile): { icon: string; title: string; sub: str
 }
 
 // ── Pentagon SVG ──────────────────────────────────────────────────────
-// Fixed internal coord system: cx=50 cy=52, pentagon r=28, labels at r=44
-// viewBox covers label overshoot on all sides
-const PENTAGON_LABELS   = ['📍', '💰', '🎯', '🧠', '🚪'];
-const PENTAGON_ANCHORS  = ['middle', 'start', 'start', 'end', 'end'] as const;
+// Internal coords: cx=55 cy=55, pentagon r=36, labels at r=50
+// viewBox="-10 -10 130 130" gives room for labels on all sides
+const PENTAGON_LABELS    = ['📍', '💰', '🎯', '🧠', '🚪'];
+const PENTAGON_ANCHORS   = ['middle', 'start', 'start', 'end', 'end'] as const;
 const PENTAGON_BASELINES = ['auto', 'middle', 'hanging', 'hanging', 'middle'] as const;
 
 function PentagonChart({ scores }: { scores: [number, number, number, number, number] }) {
-  const cx = 50; const cy = 52;
-  const r = 28;   const labelR = 44;
-  const minR = 6; // score=0 still shows a small pentagon, not a dot
+  const cx = 55; const cy = 55;
+  const r = 36;  const labelR = 51;
+  const minR = 6; // score=0 stays as a small pentagon, not a dot
 
   const pt = (i: number, len: number): [number, number] => {
     const a = (i * 72 - 90) * (Math.PI / 180);
     return [cx + len * Math.cos(a), cy + len * Math.sin(a)];
   };
 
-  const bgPts    = Array.from({ length: 5 }, (_, i) => pt(i, r));
-  const midPts   = Array.from({ length: 5 }, (_, i) => pt(i, r * 0.5));
+  const ring = (pct: number) => Array.from({ length: 5 }, (_, i) => pt(i, minR + pct * (r - minR)));
+  const bgPts    = ring(1);
   const scorePts = scores.map((s, i) => pt(i, minR + (s / 100) * (r - minR)));
   const labelPts = Array.from({ length: 5 }, (_, i) => pt(i, labelR));
 
@@ -123,23 +123,31 @@ function PentagonChart({ scores }: { scores: [number, number, number, number, nu
     pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ') + 'Z';
 
   return (
-    <svg width="88" height="88" viewBox="-5 -14 110 120">
+    <svg width="110" height="110" viewBox="-10 -10 130 130">
+      {/* Radial axis lines (apothems to vertices) */}
       {bgPts.map((p, i) => (
-        <line key={i} x1={cx} y1={cy} x2={p[0]} y2={p[1]} stroke="#EBEBEB" strokeWidth={0.75} />
+        <line key={i} x1={cx} y1={cy} x2={p[0]} y2={p[1]} stroke="#DEDEDE" strokeWidth={0.75} />
       ))}
-      <path d={path(midPts)} fill="none" stroke="#F0F0F0" strokeWidth={0.5} />
-      <path d={path(bgPts)}  fill="#F8F8F8" stroke="#E0E0E0" strokeWidth={0.75} />
-      <path d={path(scorePts)} fill="rgba(27,94,82,0.18)" stroke="var(--accent)" strokeWidth={1.25} />
+      {/* Concentric reference rings at 25 / 50 / 75 % */}
+      <path d={path(ring(0.25))} fill="none" stroke="#F2F2F2" strokeWidth={0.6} />
+      <path d={path(ring(0.50))} fill="none" stroke="#E8E8E8" strokeWidth={0.6} />
+      <path d={path(ring(0.75))} fill="none" stroke="#DEDEDE" strokeWidth={0.6} />
+      {/* Outer pentagon */}
+      <path d={path(bgPts)} fill="#FAFAFA" stroke="#D0D0D0" strokeWidth={0.75} />
+      {/* Score polygon */}
+      <path d={path(scorePts)} fill="rgba(27,94,82,0.18)" stroke="var(--accent)" strokeWidth={1.5} />
+      {/* Score dots */}
       {scorePts.map((p, i) => (
-        <circle key={i} cx={p[0]} cy={p[1]} r={2} fill="var(--accent)" />
+        <circle key={i} cx={p[0]} cy={p[1]} r={2.5} fill="var(--accent)" />
       ))}
+      {/* Vertex labels */}
       {labelPts.map((p, i) => (
         <text
           key={i}
           x={p[0]} y={p[1]}
           textAnchor={PENTAGON_ANCHORS[i]}
           dominantBaseline={PENTAGON_BASELINES[i]}
-          fontSize="10"
+          fontSize="12"
           fontFamily="system-ui, sans-serif"
         >
           {PENTAGON_LABELS[i]}
@@ -324,7 +332,7 @@ export default function DashboardPage() {
 
                 return (
                   <div key={c.id} style={{
-                    flexShrink: 0, width: '155px',
+                    flexShrink: 0, width: '175px',
                     background: '#fff', borderRadius: '16px',
                     border: '1px solid #EBEBEB',
                     padding: '0.875rem',
