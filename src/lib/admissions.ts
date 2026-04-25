@@ -15,6 +15,11 @@ export interface AdmissionInfo {
 const admissionInfo = admissionInfoRaw as Record<string, Record<string, AdmissionInfo>>;
 const classeToTest = classeToTestRaw as Record<string, string>;
 
+// Case-insensitive lookup map: lowercase(uni name) → canonical key
+const uniLowerMap = new Map<string, string>(
+  Object.keys(admissionInfo).map(k => [k.toLowerCase(), k])
+);
+
 // Strip trailing " R" suffix used in post-reform class names (es. "L-8 R" → "L-8")
 function normalizeClasse(classe: string): string {
   return classe.replace(/\s+R$/, '').trim();
@@ -27,7 +32,10 @@ function normalizeClasse(classe: string): string {
  * 3. "_all" wildcard (for unis where all courses share the same process)
  */
 export function getAdmissionInfo(universita: string, classe: string): AdmissionInfo | null {
-  const uniInfo = admissionInfo[universita];
+  const canonicalKey = admissionInfo[universita]
+    ? universita
+    : (uniLowerMap.get(universita.toLowerCase()) ?? null);
+  const uniInfo = canonicalKey ? admissionInfo[canonicalKey] : null;
   if (!uniInfo) return null;
 
   const normalized = normalizeClasse(classe);
@@ -79,7 +87,10 @@ export function daysUntil(dateStr: string | null): number | null {
 
 /** All test types available for a given university (for the university page). */
 export function getUniAdmissionEntries(universita: string): { testType: string; info: AdmissionInfo }[] {
-  const uniInfo = admissionInfo[universita];
+  const canonicalKey = admissionInfo[universita]
+    ? universita
+    : (uniLowerMap.get(universita.toLowerCase()) ?? null);
+  const uniInfo = canonicalKey ? admissionInfo[canonicalKey] : null;
   if (!uniInfo) return [];
   return Object.entries(uniInfo)
     .filter(([key]) => key !== '_all')

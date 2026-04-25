@@ -130,7 +130,7 @@ function computeScadenze(user: UserProfile): Scadenza[] {
     seen.add(key);
 
     const days = daysUntil(info.enrollment_close);
-    if (days === null || days < -14) continue; // skip if passed more than 2 weeks ago
+    if (days === null) continue;
 
     const mur = resolveUniversity(c.universita);
     result.push({
