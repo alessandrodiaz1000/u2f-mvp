@@ -19,23 +19,22 @@ const TIPO_STYLE: Record<string, { text: string; bg: string }> = {
 
 const PRIVATE_KEYWORDS = ['Bocconi', 'Cattolica', 'San Raffaele', 'IULM'];
 
-// 5 pentagon scores: [geo, costo, interessi, attitudine, accesso]
+// 5 pentagon scores derived directly from scoreCourse breakdown — single source of truth.
 function computeCourseScores(course: Course, user: UserProfile): [number, number, number, number, number] {
+  const { areaScore, softScore, uniPrefBoost } = scoreCourse(course, user);
+
   const geo = 100;
 
+  // costo: uniPrefBoost is 0 or 25. Map to 0-100 with a neutral baseline.
   const isPrivate = PRIVATE_KEYWORDS.some(k => course.universita.includes(k));
   const pref = user.uniPreference;
   const costo = pref === 'pubblica'
     ? (isPrivate ? 15 : 95)
     : pref === 'privata'
-    ? (isPrivate ? 90 : 30)
+    ? (isPrivate ? 90 : 20)
     : (isPrivate ? 40 : 75);
-
-  const areaRaw = user.areas.reduce((sum, a) => sum + ((course.areaScores ?? {})[a] ?? 0), 0);
-  const areaMax = Math.max(user.areas.length * 10, 1);
-  const interessi = Math.min(100, Math.round((areaRaw / areaMax) * 100));
-
-  const { softScore } = scoreCourse(course, user);
+  const areaMax   = Math.max(user.areas.length * 10, 1);
+  const interessi = Math.min(100, Math.round((areaScore / areaMax) * 100));
   const attitudine = Math.min(100, Math.round((softScore / 50) * 100));
 
   const acc = (course.accesso ?? '').toLowerCase();
@@ -46,9 +45,8 @@ function computeCourseScores(course: Course, user: UserProfile): [number, number
 
 function getMatchPct(course: Course, user: UserProfile): number {
   if (user.areas.length === 0) return 50;
-  const areaRaw = user.areas.reduce((sum, a) => sum + ((course.areaScores ?? {})[a] ?? 0), 0);
-  const areaMax = Math.max(user.areas.length * 10, 1);
-  return Math.min(100, Math.round((areaRaw / areaMax) * 100));
+  const { areaScore } = scoreCourse(course, user);
+  return Math.min(100, Math.round((areaScore / Math.max(user.areas.length * 10, 1)) * 100));
 }
 
 function computeClarity(user: UserProfile): number {
