@@ -15,10 +15,16 @@ const NavPreferenceContext = createContext<NavPreferenceContextType>({
 
 export function NavPreferenceProvider({ children }: { children: React.ReactNode }) {
   const [navMode, setNavMode] = useState<NavMode>('bottom');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('u2f-nav-mode') as NavMode | null;
     if (saved === 'bottom' || saved === 'side') setNavMode(saved);
+
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   const toggle = () => {
@@ -30,7 +36,7 @@ export function NavPreferenceProvider({ children }: { children: React.ReactNode 
   };
 
   return (
-    <NavPreferenceContext.Provider value={{ navMode, toggle }}>
+    <NavPreferenceContext.Provider value={{ navMode: isMobile ? 'bottom' : navMode, toggle }}>
       {children}
     </NavPreferenceContext.Provider>
   );
