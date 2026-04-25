@@ -11,11 +11,13 @@ type Course = typeof MILAN_COURSES[number];
  */
 export interface ScoreBreakdown {
   total: number;
-  areaScore: number;      // sum of course.areaScores[a] for each user selected area (0–10 per area)
-  degreeMatch: boolean;   // hard: course tipo === user's degreeType preference
-  diplomaBoost: number;   // soft: academic background relevance
-  softScore: number;      // soft: psycho-attitudinal dimension score
-  missingDimensions: string[]; // dimensions with no user data yet (for orientation prompts)
+  areaScore: number;
+  degreeMatch: boolean;
+  diplomaBoost: number;
+  softScore: number;
+  uniPrefBoost: number;   // soft: matches user's public/private preference
+  langPrefBoost: number;  // soft: matches user's language preference
+  missingDimensions: string[];
 }
 
 /**
@@ -67,7 +69,24 @@ export function scoreCourse(course: Course, user: UserProfile): ScoreBreakdown {
 
   total += softScore;
 
-  return { total, areaScore, degreeMatch, diplomaBoost, softScore, missingDimensions };
+  // ── SOFT SIGNAL 3: University type preference ────────────────────
+  const PRIVATE_UNIS = ['Bocconi', 'Cattolica', 'San Raffaele', 'IULM'];
+  const isPrivate = PRIVATE_UNIS.some(k => course.universita.includes(k));
+  const uniPref = user.uniPreference ?? '';
+  const uniPrefBoost =
+    (uniPref === 'pubblica' && !isPrivate) ? 25 :
+    (uniPref === 'privata'  && isPrivate)  ? 25 : 0;
+  total += uniPrefBoost;
+
+  // ── SOFT SIGNAL 4: Language preference ──────────────────────────
+  const langPref = user.langPreference ?? '';
+  const courseLang = (course.lingua ?? '').toLowerCase();
+  const langPrefBoost =
+    (langPref === 'italiano' && courseLang === 'italiano') ? 20 :
+    (langPref === 'inglese'  && courseLang !== 'italiano') ? 20 : 0;
+  total += langPrefBoost;
+
+  return { total, areaScore, degreeMatch, diplomaBoost, softScore, uniPrefBoost, langPrefBoost, missingDimensions };
 }
 
 /**
