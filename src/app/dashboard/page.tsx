@@ -124,23 +124,23 @@ function PentagonChart({ scores }: { scores: [number, number, number, number, nu
 
   return (
     <svg width="110" height="110" viewBox="-10 -10 130 130">
-      {/* Radial axis lines (apothems to vertices) */}
+      {/* 1. Outer bg — first, so everything else renders on top */}
+      <path d={path(bgPts)} fill="#F5F5F5" stroke="#C8C8C8" strokeWidth={0.75} />
+      {/* 2. Concentric rings at 25 / 50 / 75% — dashed, visible on bg */}
+      <path d={path(ring(0.25))} fill="none" stroke="#C0C0C0" strokeWidth={0.75} strokeDasharray="2 2" />
+      <path d={path(ring(0.50))} fill="none" stroke="#B0B0B0" strokeWidth={0.75} strokeDasharray="2 2" />
+      <path d={path(ring(0.75))} fill="none" stroke="#A0A0A0" strokeWidth={0.75} strokeDasharray="2 2" />
+      {/* 3. Radial axis lines */}
       {bgPts.map((p, i) => (
-        <line key={i} x1={cx} y1={cy} x2={p[0]} y2={p[1]} stroke="#DEDEDE" strokeWidth={0.75} />
+        <line key={i} x1={cx} y1={cy} x2={p[0]} y2={p[1]} stroke="#C0C0C0" strokeWidth={0.75} />
       ))}
-      {/* Concentric reference rings at 25 / 50 / 75 % */}
-      <path d={path(ring(0.25))} fill="none" stroke="#F2F2F2" strokeWidth={0.6} />
-      <path d={path(ring(0.50))} fill="none" stroke="#E8E8E8" strokeWidth={0.6} />
-      <path d={path(ring(0.75))} fill="none" stroke="#DEDEDE" strokeWidth={0.6} />
-      {/* Outer pentagon */}
-      <path d={path(bgPts)} fill="#FAFAFA" stroke="#D0D0D0" strokeWidth={0.75} />
-      {/* Score polygon */}
-      <path d={path(scorePts)} fill="rgba(27,94,82,0.18)" stroke="var(--accent)" strokeWidth={1.5} />
-      {/* Score dots */}
+      {/* 4. Score polygon — explicit hex, never CSS var inside SVG */}
+      <path d={path(scorePts)} fill="rgba(27,94,82,0.22)" stroke="#1B5E52" strokeWidth={1.75} />
+      {/* 5. Dots */}
       {scorePts.map((p, i) => (
-        <circle key={i} cx={p[0]} cy={p[1]} r={2.5} fill="var(--accent)" />
+        <circle key={i} cx={p[0]} cy={p[1]} r={2.5} fill="#1B5E52" />
       ))}
-      {/* Vertex labels */}
+      {/* 6. Labels at each vertex */}
       {labelPts.map((p, i) => (
         <text
           key={i}
