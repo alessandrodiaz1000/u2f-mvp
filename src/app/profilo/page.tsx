@@ -43,8 +43,56 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+const PROFILE_FIELDS = [
+  {
+    key: 'uniPreference' as const,
+    icon: '🏛',
+    label: 'Preferenza università',
+    options: [
+      { value: 'pubblica',     label: 'Pubblica',     sub: 'Polimi, Statale, Bicocca…' },
+      { value: 'privata',      label: 'Privata',      sub: 'Bocconi, Cattolica, IULM…' },
+      { value: 'indifferente', label: 'Indifferente', sub: 'Valuto entrambe' },
+    ],
+  },
+  {
+    key: 'langPreference' as const,
+    icon: '🌐',
+    label: 'Lingua dei corsi',
+    options: [
+      { value: 'italiano',     label: 'Italiano',     sub: 'Preferisco corsi in italiano' },
+      { value: 'inglese',      label: 'Inglese',      sub: 'Preferisco corsi in inglese' },
+      { value: 'indifferente', label: 'Indifferente', sub: 'Entrambe vanno bene' },
+    ],
+  },
+  {
+    key: 'gradeAvg' as const,
+    icon: '📊',
+    label: 'Media 3ª–4ª liceo',
+    options: [
+      { value: 'lt7',   label: '< 7',   sub: 'Approssimativa' },
+      { value: '7to8',  label: '7 – 8', sub: 'Approssimativa' },
+      { value: '8to9',  label: '8 – 9', sub: 'Approssimativa' },
+      { value: '9to10', label: '9 – 10',sub: 'Approssimativa' },
+    ],
+  },
+  {
+    key: 'startYear' as const,
+    icon: '🎓',
+    label: 'Anno di inizio università',
+    options: [
+      { value: '2025', label: '2025/26', sub: 'Inizierai o hai iniziato quest\'anno' },
+      { value: '2026', label: '2026/27', sub: 'Inizierai il prossimo anno' },
+      { value: '2027', label: '2027/28', sub: 'Tra due anni' },
+      { value: '2028', label: '2028/29', sub: 'Tra tre anni' },
+    ],
+  },
+] as const;
+
+type PrefFieldKey = typeof PROFILE_FIELDS[number]['key'];
+const GRADE_LABELS: Record<string, string> = { lt7: '< 7', '7to8': '7–8', '8to9': '8–9', '9to10': '9–10' };
+
 export default function ProfiloPage() {
-  const { user, completeOnboarding, logout } = useAuth();
+  const { user, completeOnboarding, updateProfile, logout } = useAuth();
   const { t } = useLanguage();
   const tp = t.app.profilo;
   const router = useRouter();
@@ -61,6 +109,7 @@ export default function ProfiloPage() {
   );
   const [degree, setDegree]     = useState(user.degreeType ?? '');
   const [saved, setSaved]       = useState(false);
+  const [openPref, setOpenPref] = useState<PrefFieldKey | null>(null);
 
   const toggleArea = (a: string) =>
     setAreas(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
@@ -171,6 +220,79 @@ export default function ProfiloPage() {
             {DEGREES.map(d => (
               <Chip key={d} label={d} active={degree === d} onClick={() => setDegree(d)} />
             ))}
+          </div>
+        </Section>
+
+        {/* Preferenze di ricerca */}
+        <Section title="Preferenze di ricerca">
+          <div style={{
+            background: 'var(--surface)', borderRadius: '16px',
+            border: '1px solid var(--border)', overflow: 'hidden',
+          }}>
+            {PROFILE_FIELDS.map((field, fi) => {
+              const currentVal = user[field.key];
+              const isOpen = openPref === field.key;
+              const displayLabel = field.key === 'gradeAvg'
+                ? (currentVal ? GRADE_LABELS[currentVal] ?? currentVal : null)
+                : field.options.find(o => o.value === currentVal)?.label ?? null;
+
+              return (
+                <div key={field.key} style={{ borderBottom: fi < PROFILE_FIELDS.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <button
+                    onClick={() => setOpenPref(isOpen ? null : field.key)}
+                    style={{
+                      width: '100%', padding: '0.875rem 1rem',
+                      display: 'flex', alignItems: 'center', gap: '0.75rem',
+                      background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ fontSize: '1.125rem', flexShrink: 0 }}>{field.icon}</span>
+                    <span style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: 'var(--text-1)' }}>{field.label}</span>
+                    {displayLabel ? (
+                      <span style={{
+                        fontSize: '11px', fontWeight: 600, padding: '0.2rem 0.625rem',
+                        borderRadius: '20px', background: 'var(--accent-bg)', color: 'var(--accent)',
+                      }}>
+                        {displayLabel}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>Aggiungi</span>
+                    )}
+                    <span style={{ fontSize: '12px', color: 'var(--text-3)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
+                  </button>
+
+                  {isOpen && (
+                    <div style={{ padding: '0 1rem 0.875rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {field.options.map(opt => {
+                        const selected = currentVal === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            onClick={() => {
+                              updateProfile({ [field.key]: opt.value } as Partial<typeof user>);
+                              setOpenPref(null);
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '0.75rem',
+                              padding: '0.625rem 0.875rem', borderRadius: '12px',
+                              border: `1.5px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                              background: selected ? 'var(--accent-bg)' : 'var(--bg)',
+                              cursor: 'pointer', textAlign: 'left',
+                            }}
+                          >
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: '13px', fontWeight: 600, color: selected ? 'var(--accent)' : 'var(--text-1)' }}>{opt.label}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '1px' }}>{opt.sub}</div>
+                            </div>
+                            {selected && <span style={{ fontSize: '14px', color: 'var(--accent)' }}>✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </Section>
 

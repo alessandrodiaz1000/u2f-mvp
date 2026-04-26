@@ -275,63 +275,12 @@ function ClarityRing({ score }: { score: number }) {
   );
 }
 
-// ── Profile fields config ─────────────────────────────────────────────
-// To add a new field: add an entry here + add the field to UserProfile + migrate in AuthContext.
-const PROFILE_FIELDS = [
-  {
-    key: 'uniPreference' as const,
-    icon: '🏛',
-    label: 'Preferenza università',
-    options: [
-      { value: 'pubblica',      label: 'Pubblica',      sub: 'Polimi, Statale, Bicocca…' },
-      { value: 'privata',       label: 'Privata',       sub: 'Bocconi, Cattolica, IULM…' },
-      { value: 'indifferente',  label: 'Indifferente',  sub: 'Valuto entrambe' },
-    ],
-  },
-  {
-    key: 'langPreference' as const,
-    icon: '🌐',
-    label: 'Lingua dei corsi',
-    options: [
-      { value: 'italiano',     label: 'Italiano',     sub: 'Preferisco corsi in italiano' },
-      { value: 'inglese',      label: 'Inglese',      sub: 'Preferisco corsi in inglese' },
-      { value: 'indifferente', label: 'Indifferente', sub: 'Entrambe vanno bene' },
-    ],
-  },
-  {
-    key: 'gradeAvg' as const,
-    icon: '📊',
-    label: 'Media 3ª–4ª liceo',
-    options: [
-      { value: 'lt7',   label: '< 7',    sub: 'Approssimativa' },
-      { value: '7to8',  label: '7 – 8',  sub: 'Approssimativa' },
-      { value: '8to9',  label: '8 – 9',  sub: 'Approssimativa' },
-      { value: '9to10', label: '9 – 10', sub: 'Approssimativa' },
-    ],
-  },
-  {
-    key: 'startYear' as const,
-    icon: '🎓',
-    label: 'Anno di inizio università',
-    options: [
-      { value: '2025', label: '2025/26', sub: 'Inizierai o hai iniziato quest\'anno' },
-      { value: '2026', label: '2026/27', sub: 'Inizierai il prossimo anno' },
-      { value: '2027', label: '2027/28', sub: 'Tra due anni' },
-      { value: '2028', label: '2028/29', sub: 'Tra tre anni' },
-    ],
-  },
-] as const;
-
-type ProfileFieldKey = typeof PROFILE_FIELDS[number]['key'];
-
-const GRADE_LABELS: Record<string, string> = { lt7: '< 7', '7to8': '7–8', '8to9': '8–9', '9to10': '9–10' };
 
 // ── Main Page ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { user, updateProfile, updateAdmissionProgress } = useAuth();
+  const { user, updateAdmissionProgress } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
-  const [openField, setOpenField] = useState<ProfileFieldKey | null>(null);
   const [openCourseId, setOpenCourseId] = useState<number | null>(null);
   const [scoreInput, setScoreInput] = useState('');
   const [testTypeInput, setTestTypeInput] = useState('BAT');
@@ -561,101 +510,6 @@ export default function DashboardPage() {
             <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '18px', flexShrink: 0 }}>→</div>
           </div>
         </Link>
-      </section>
-
-      {/* ── Completa il profilo ── */}
-      <section style={{ padding: '0.875rem 1.25rem 0' }}>
-        <div style={{
-          background: '#fff', borderRadius: '20px', border: '1px solid #EBEBEB',
-          overflow: 'hidden',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-        }}>
-          {/* Header */}
-          <div style={{ padding: '1.125rem 1.25rem 0.875rem', borderBottom: '1px solid #F5F5F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>Completa il profilo</h2>
-              <p style={{ fontSize: '11px', color: '#BBB', marginTop: '1px' }}>
-                {[user.uniPreference, user.langPreference, user.gradeAvg, user.startYear].filter(Boolean).length} / {PROFILE_FIELDS.length} compilati
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '3px' }}>
-              {PROFILE_FIELDS.map(f => (
-                <div key={f.key} style={{
-                  width: '8px', height: '8px', borderRadius: '50%',
-                  background: user[f.key] ? '#1B5E52' : '#E5E5E5',
-                }} />
-              ))}
-            </div>
-          </div>
-
-          {/* Fields */}
-          {PROFILE_FIELDS.map((field, fi) => {
-            const currentVal = user[field.key];
-            const isOpen = openField === field.key;
-            const displayLabel = field.key === 'gradeAvg'
-              ? (currentVal ? GRADE_LABELS[currentVal] ?? currentVal : null)
-              : field.options.find(o => o.value === currentVal)?.label ?? null;
-
-            return (
-              <div key={field.key} style={{ borderBottom: fi < PROFILE_FIELDS.length - 1 ? '1px solid #F5F5F5' : 'none' }}>
-                {/* Row */}
-                <button
-                  onClick={() => setOpenField(isOpen ? null : field.key)}
-                  style={{
-                    width: '100%', padding: '0.875rem 1.25rem',
-                    display: 'flex', alignItems: 'center', gap: '0.75rem',
-                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-                  }}
-                >
-                  <span style={{ fontSize: '1.125rem', flexShrink: 0 }}>{field.icon}</span>
-                  <span style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: '#333' }}>{field.label}</span>
-                  {displayLabel ? (
-                    <span style={{
-                      fontSize: '11px', fontWeight: 600, padding: '0.2rem 0.625rem',
-                      borderRadius: '20px', background: '#E4F0ED', color: '#1B5E52',
-                    }}>
-                      {displayLabel}
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: '11px', color: '#CCC' }}>Aggiungi</span>
-                  )}
-                  <span style={{ fontSize: '12px', color: '#CCC', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
-                </button>
-
-                {/* Inline picker */}
-                {isOpen && (
-                  <div style={{ padding: '0 1.25rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {field.options.map(opt => {
-                      const selected = currentVal === opt.value;
-                      return (
-                        <button
-                          key={opt.value}
-                          onClick={() => {
-                            updateProfile({ [field.key]: opt.value } as Partial<typeof user>);
-                            setOpenField(null);
-                          }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '0.75rem',
-                            padding: '0.625rem 0.875rem', borderRadius: '12px',
-                            border: `1.5px solid ${selected ? '#1B5E52' : '#EBEBEB'}`,
-                            background: selected ? '#E4F0ED' : '#FAFAFA',
-                            cursor: 'pointer', textAlign: 'left',
-                          }}
-                        >
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '13px', fontWeight: 600, color: selected ? '#1B5E52' : '#222' }}>{opt.label}</div>
-                            <div style={{ fontSize: '11px', color: '#999', marginTop: '1px' }}>{opt.sub}</div>
-                          </div>
-                          {selected && <span style={{ fontSize: '14px', color: '#1B5E52' }}>✓</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
       </section>
 
       {/* ── Percorso di ammissione ── */}
