@@ -6,7 +6,12 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { MILAN_COURSES, resolveUniversity, uniSlug } from '@/lib/data';
 import { scoreCourse } from '@/lib/scoring';
-import { getAdmissionInfo, formatDeadline, daysUntil } from '@/lib/admissions';
+import {
+  getAdmissionInfo, formatDeadline, daysUntil,
+  getActiveRound, getActiveStep, getStepDeadline, isAllDone, PATHWAY_STEPS,
+  type PathwayType, type StepDef,
+} from '@/lib/admissions';
+import type { CourseAdmissionProgress } from '@/context/AuthContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { U2FLogo } from '@/components/U2FLogo';
 import type { Course } from '@/lib/data';
@@ -106,49 +111,83 @@ function getNextStep(user: UserProfile): { icon: string; title: string; sub: str
   return { icon: '📅', title: 'Segna le scadenze', sub: 'Controlla le date di ammissione che ti interessano', href: '/esplora' };
 }
 
-// ── Scadenze from saved courses ───────────────────────────────────────
-interface Scadenza {
-  key: string;
+// ── Admission roadmap from saved courses ─────────────────────────────
+
+interface PercorsoEntry {
+  course_id: number;
+  courseName: string;
   uniShort: string;
+  pathway_type: PathwayType;
   test: string;
-  daysLeft: number;
-  dateLabel: string | null;
   bando_url: string | null;
+  currentStep: StepDef | null;
+  stepDeadline: string | null;
+  stepIndex: number;
+  totalSteps: number;
+  allSteps: StepDef[];
+  completedSteps: string[];
+  done: boolean;
   estimated: boolean;
   sourceYear: string;
+  testScore: number | null;
+  testType: string | null;
 }
 
-function computeScadenze(user: UserProfile): Scadenza[] {
+function computePercorso(user: UserProfile): PercorsoEntry[] {
   const targetYear = user.startYear || String(new Date().getFullYear());
   const favCourses = MILAN_COURSES.filter(c => user.favorites.includes(c.id));
   const seen = new Set<string>();
-  const result: Scadenza[] = [];
+  const result: PercorsoEntry[] = [];
 
   for (const c of favCourses) {
     const info = getAdmissionInfo(c.universita, c.classe, targetYear);
-    if (!info?.enrollment_close) continue;
+    if (!info) continue;
 
+    // Deduplicate by uni + test (same process for multiple courses at same uni)
     const key = `${c.universita}__${info.test}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
-    const days = daysUntil(info.enrollment_close);
-    if (days === null) continue;
+    const progress: CourseAdmissionProgress = (user.admissionTracking ?? []).find(p => p.course_id === c.id)
+      ?? { course_id: c.id, target_round: 1, completed_steps: [], test_score: null, test_type: null, test_date_taken: null };
 
+    const steps = PATHWAY_STEPS[info.pathway_type];
+    const completedSteps = progress.completed_steps;
+    const currentStep = getActiveStep(info.pathway_type, completedSteps);
+    const round = getActiveRound(info);
+    const stepDeadline = currentStep && round ? getStepDeadline(currentStep, round) : null;
+    const stepIndex = currentStep ? steps.findIndex(s => s.id === currentStep.id) : steps.length;
+    const done = isAllDone(info.pathway_type, completedSteps);
     const mur = resolveUniversity(c.universita);
+
     result.push({
-      key,
+      course_id: c.id,
+      courseName: c.nome,
       uniShort: mur?.short_name ?? c.universita.split(' ').slice(0, 3).join(' '),
+      pathway_type: info.pathway_type,
       test: info.test,
-      daysLeft: days,
-      dateLabel: formatDeadline(info.enrollment_close, 'it'),
       bando_url: info.bando_url,
+      currentStep,
+      stepDeadline,
+      stepIndex,
+      totalSteps: steps.length,
+      allSteps: steps,
+      completedSteps,
+      done,
       estimated: info.estimated ?? false,
       sourceYear: info.sourceYear ?? targetYear,
+      testScore: progress.test_score,
+      testType: progress.test_type,
     });
   }
 
-  return result.sort((a, b) => a.daysLeft - b.daysLeft);
+  // Sort: not-done first by deadline, then done
+  return result.sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    const da = a.stepDeadline ?? '9999';
+    const db = b.stepDeadline ?? '9999';
+    return da.localeCompare(db);
+  });
 }
 
 // ── Pentagon SVG ──────────────────────────────────────────────────────
@@ -289,10 +328,13 @@ const GRADE_LABELS: Record<string, string> = { lt7: '< 7', '7to8': '7–8', '8to
 
 // ── Main Page ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, updateAdmissionProgress } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
   const [openField, setOpenField] = useState<ProfileFieldKey | null>(null);
+  const [openCourseId, setOpenCourseId] = useState<number | null>(null);
+  const [scoreInput, setScoreInput] = useState('');
+  const [testTypeInput, setTestTypeInput] = useState('BAT');
 
   if (!user?.onboarded) { router.replace('/login'); return null; }
 
@@ -301,7 +343,7 @@ export default function DashboardPage() {
   const clarityScore = computeClarity(user);
   const direction    = computeDirection(user);
   const nextStep     = getNextStep(user);
-  const scadenze     = computeScadenze(user);
+  const percorso     = computePercorso(user);
 
   const clarityLabel =
     clarityScore >= 70 ? 'Ottima chiarezza!' :
@@ -616,85 +658,213 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* ── Le tue scadenze ── */}
+      {/* ── Percorso di ammissione ── */}
       <section style={{ padding: '0.875rem 1.25rem 0' }}>
         <div style={{
           background: '#fff', borderRadius: '20px', border: '1px solid #EBEBEB',
           overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
         }}>
-          <div style={{ padding: '1rem 1.25rem 0.875rem', borderBottom: '1px solid #F5F5F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>Le tue scadenze</h2>
-              {scadenze.length > 0 && scadenze.some(s => s.estimated) && (
-                <p style={{ fontSize: '10px', color: '#BBB', marginTop: '2px' }}>
-                  📅 Basate su {scadenze.find(s => s.estimated)?.sourceYear} — il bando {user.startYear} non è ancora uscito
-                </p>
-              )}
-            </div>
-            {scadenze.length > 0 && scadenze[0].daysLeft >= 0 && (
-              <span style={{ fontSize: '11px', color: scadenze[0].daysLeft <= 30 ? '#EF4444' : '#1B5E52', fontWeight: 600 }}>
-                Prima: {scadenze[0].daysLeft} gg
-              </span>
-            )}
+          <div style={{ padding: '1rem 1.25rem 0.875rem', borderBottom: '1px solid #F5F5F5' }}>
+            <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
+              Percorso di ammissione
+            </h2>
           </div>
 
-          {scadenze.length === 0 ? (
+          {percorso.length === 0 ? (
             <div style={{ padding: '1.5rem 1.25rem', textAlign: 'center' }}>
               <p style={{ fontSize: '13px', color: '#BBB', lineHeight: 1.6 }}>
                 {favCourses.length === 0
-                  ? 'Salva dei corsi per vedere le scadenze di ammissione.'
-                  : 'Nessuna scadenza disponibile per i corsi salvati.'}
+                  ? 'Salva dei corsi per tracciare il percorso di ammissione.'
+                  : 'Nessuna info di ammissione disponibile per i corsi salvati.'}
               </p>
             </div>
           ) : (
-            scadenze.map((s, i) => {
-              const passed = s.daysLeft < 0;
-              const urgent = !passed && s.daysLeft <= 30;
-              const dotColor = passed ? '#E5E5E5' : urgent ? '#EF4444' : '#1B5E52';
+            percorso.map((entry, i) => {
+              const isOpen = openCourseId === entry.course_id;
+              const days = entry.stepDeadline ? daysUntil(entry.stepDeadline) : null;
+              const urgent = days !== null && days >= 0 && days <= 30;
+
+              const handleConfirm = (stepId: string) => {
+                const newCompleted = [...entry.completedSteps, stepId];
+                updateAdmissionProgress(entry.course_id, { completed_steps: newCompleted });
+                setOpenCourseId(null);
+                setScoreInput('');
+              };
+
+              const handleScoreSave = (stepId: string) => {
+                const score = parseFloat(scoreInput);
+                const newCompleted = [...entry.completedSteps, stepId];
+                updateAdmissionProgress(entry.course_id, {
+                  completed_steps: newCompleted,
+                  test_score: isNaN(score) ? null : score,
+                  test_type: entry.pathway_type === 'application' ? testTypeInput : entry.test,
+                });
+                setOpenCourseId(null);
+                setScoreInput('');
+              };
+
               return (
-                <div key={s.key} style={{
-                  padding: '0.875rem 1.25rem',
-                  borderBottom: i < scadenze.length - 1 ? '1px solid #F5F5F5' : 'none',
-                  display: 'flex', alignItems: 'center', gap: '0.875rem',
+                <div key={entry.course_id} style={{
+                  borderBottom: i < percorso.length - 1 ? '1px solid #F5F5F5' : 'none',
                 }}>
-                  {/* Countdown bubble */}
-                  <div style={{
-                    width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0,
-                    background: passed ? '#F5F5F5' : urgent ? '#FFF1F1' : '#F0FDF4',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {passed ? (
-                      <span style={{ fontSize: '16px', color: '#CCC' }}>✓</span>
-                    ) : (
-                      <>
-                        <span style={{ fontSize: '14px', fontWeight: 700, color: dotColor, lineHeight: 1 }}>{s.daysLeft}</span>
-                        <span style={{ fontSize: '8px', color: dotColor, fontWeight: 500 }}>giorni</span>
-                      </>
+                  {/* Card header */}
+                  <div style={{ padding: '0.875rem 1.25rem 0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.625rem' }}>
+                      <div style={{ flex: 1, minWidth: 0, marginRight: '0.5rem' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#222', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {entry.uniShort}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#999', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {entry.courseName}
+                        </div>
+                      </div>
+                      <span style={{
+                        fontSize: '10px', fontWeight: 600, flexShrink: 0,
+                        padding: '0.15rem 0.5rem', borderRadius: '20px',
+                        background: entry.done ? '#E4F0ED' : '#F5F5F5',
+                        color: entry.done ? '#1B5E52' : '#888',
+                      }}>
+                        {entry.done ? '✓ Completato' : `step ${entry.stepIndex + 1}/${entry.totalSteps}`}
+                      </span>
+                    </div>
+
+                    {/* Step list */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                      {entry.allSteps.map((step, si) => {
+                        const isDone = entry.completedSteps.includes(step.id);
+                        const isCurrent = !entry.done && entry.currentStep?.id === step.id;
+                        const isLocked = !isDone && !isCurrent;
+                        const stepDays = isCurrent && entry.stepDeadline ? daysUntil(entry.stepDeadline) : null;
+                        const stepUrgent = stepDays !== null && stepDays >= 0 && stepDays <= 30;
+
+                        return (
+                          <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                            {/* Step indicator */}
+                            <div style={{
+                              width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '9px', fontWeight: 700, marginTop: '1px',
+                              background: isDone ? '#1B5E52' : isCurrent ? (stepUrgent ? '#FEE2E2' : '#F0FDF4') : '#F5F5F5',
+                              color: isDone ? '#fff' : isCurrent ? (stepUrgent ? '#EF4444' : '#1B5E52') : '#CCC',
+                              border: isCurrent ? `1.5px solid ${stepUrgent ? '#EF4444' : '#1B5E52'}` : 'none',
+                            }}>
+                              {isDone ? '✓' : si + 1}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <span style={{
+                                fontSize: '11px', fontWeight: isCurrent ? 600 : 400,
+                                color: isDone ? '#AAA' : isLocked ? '#CCC' : '#222',
+                                textDecoration: isDone ? 'line-through' : 'none',
+                              }}>
+                                {step.label_it}
+                              </span>
+                              {isCurrent && entry.stepDeadline && (
+                                <span style={{
+                                  marginLeft: '0.375rem', fontSize: '10px', fontWeight: 600,
+                                  color: stepUrgent ? '#EF4444' : '#888',
+                                }}>
+                                  {stepDays !== null && stepDays >= 0 ? `${stepDays}gg · ` : ''}entro {formatDeadline(entry.stepDeadline)}
+                                </span>
+                              )}
+                              {isDone && step.user_input !== 'confirm' && entry.testScore !== null && si === entry.stepIndex - 1 && (
+                                <span style={{ marginLeft: '0.375rem', fontSize: '10px', color: '#1B5E52', fontWeight: 600 }}>
+                                  {entry.testType && entry.pathway_type === 'application' ? `${entry.testType} · ` : ''}{entry.testScore}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Action button */}
+                    {!entry.done && entry.currentStep && (
+                      <div style={{ marginTop: '0.75rem' }}>
+                        {/* Score input panel */}
+                        {isOpen && entry.currentStep.user_input !== 'confirm' ? (
+                          <div style={{ background: '#F8F8F8', borderRadius: '12px', padding: '0.875rem' }}>
+                            {entry.currentStep.user_input === 'score_and_type' && (
+                              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.625rem' }}>
+                                {['BAT', 'SAT', 'ACT'].map(t => (
+                                  <button key={t} onClick={() => setTestTypeInput(t)} style={{
+                                    flex: 1, padding: '0.375rem', borderRadius: '8px', fontSize: '11px', fontWeight: 600,
+                                    border: `1.5px solid ${testTypeInput === t ? '#1B5E52' : '#E0E0E0'}`,
+                                    background: testTypeInput === t ? '#E4F0ED' : '#fff',
+                                    color: testTypeInput === t ? '#1B5E52' : '#666',
+                                    cursor: 'pointer',
+                                  }}>{t}</button>
+                                ))}
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                              <input
+                                type="number"
+                                placeholder={entry.currentStep.score_label_it ?? 'Punteggio'}
+                                value={scoreInput}
+                                onChange={e => setScoreInput(e.target.value)}
+                                style={{
+                                  flex: 1, padding: '0.5rem 0.75rem', borderRadius: '8px',
+                                  border: '1.5px solid #E0E0E0', fontSize: '13px',
+                                  outline: 'none', background: '#fff',
+                                }}
+                              />
+                              <button
+                                onClick={() => handleScoreSave(entry.currentStep!.id)}
+                                style={{
+                                  padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                                  background: '#1B5E52', color: '#fff', border: 'none', cursor: 'pointer',
+                                }}>
+                                Salva
+                              </button>
+                              <button
+                                onClick={() => { setOpenCourseId(null); setScoreInput(''); }}
+                                style={{
+                                  padding: '0.5rem 0.75rem', borderRadius: '8px', fontSize: '12px',
+                                  background: 'none', color: '#AAA', border: '1px solid #E0E0E0', cursor: 'pointer',
+                                }}>
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (entry.currentStep!.user_input === 'confirm') {
+                                handleConfirm(entry.currentStep!.id);
+                              } else {
+                                setOpenCourseId(entry.course_id);
+                                setScoreInput('');
+                              }
+                            }}
+                            style={{
+                              width: '100%', padding: '0.625rem', borderRadius: '10px',
+                              fontSize: '12px', fontWeight: 600,
+                              background: urgent ? '#FFF1F1' : '#F0FDF4',
+                              color: urgent ? '#EF4444' : '#1B5E52',
+                              border: `1.5px solid ${urgent ? '#FCA5A5' : '#A7F3D0'}`,
+                              cursor: 'pointer', textAlign: 'center',
+                            }}>
+                            ✓ Ho completato: {entry.currentStep.label_it}
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Bando link */}
+                    {entry.bando_url && (
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <a href={entry.bando_url} target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize: '11px', color: '#1B5E52', fontWeight: 500, textDecoration: 'none' }}>
+                          Bando ufficiale →
+                        </a>
+                      </div>
+                    )}
+                    {entry.estimated && (
+                      <p style={{ fontSize: '9px', color: '#CCC', marginTop: '0.375rem' }}>
+                        Date basate su {entry.sourceYear}
+                      </p>
                     )}
                   </div>
-
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#222', marginBottom: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {s.uniShort}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 600, padding: '0.1rem 0.4rem', borderRadius: '4px', background: '#F0F0F0', color: '#555' }}>
-                        {s.test}
-                      </span>
-                      <span style={{ fontSize: '11px', color: passed ? '#CCC' : '#999' }}>
-                        {passed ? 'scaduta' : `Scade ${s.dateLabel}`}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Bando link */}
-                  {s.bando_url && !passed && (
-                    <a href={s.bando_url} target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: '11px', color: '#1B5E52', fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
-                      Bando →
-                    </a>
-                  )}
                 </div>
               );
             })

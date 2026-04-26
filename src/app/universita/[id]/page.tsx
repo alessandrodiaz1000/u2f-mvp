@@ -4,7 +4,10 @@ import { useMemo, useState } from 'react';
 import { getMurBySlug, getCoursesForMur, DOCTORAL_ONLY } from '@/lib/data';
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { getUniAdmissionEntries, formatDeadline, daysUntil } from '@/lib/admissions';
+import {
+  getUniAdmissionEntries, formatDeadline, daysUntil,
+  getActiveRound, PATHWAY_STEPS,
+} from '@/lib/admissions';
 const TIPO_STYLE: Record<string, { text: string; bg: string; border: string }> = {
   Triennale:     { text: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
   Magistrale:    { text: '#065F46', bg: '#ECFDF5', border: '#A7F3D0' },
@@ -18,6 +21,7 @@ export default function UniversityPage({ params }: { params: { id: string } }) {
   const { t } = useLanguage();
   const [search, setSearch]               = useState('');
   const [selectedDegrees, setSelectedDegrees] = useState<string[]>([]);
+  const [selectedRounds, setSelectedRounds] = useState<Record<string, number>>({});
 
   const uni  = getMurBySlug(id);
   const allCourses = useMemo(() => uni ? getCoursesForMur(uni) : [], [uni]);
@@ -126,67 +130,165 @@ export default function UniversityPage({ params }: { params: { id: string } }) {
           <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-1)', letterSpacing: '-0.02em', marginBottom: '0.75rem' }}>
             Ammissione
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {admissionEntries.map(({ testType, info }) => {
-              const days = daysUntil(info.enrollment_close);
-              const closeLabel = formatDeadline(info.enrollment_close);
+              const steps = PATHWAY_STEPS[info.pathway_type];
+              const isFree = info.pathway_type === 'free';
+
+              // Round tabs state for this entry
+              const roundIdx = selectedRounds[testType] ?? 0;
+              const hasMultipleRounds = info.rounds.length > 1;
+              const activeRound = info.rounds[roundIdx] ?? getActiveRound(info);
+
+              const primaryDeadline = activeRound?.application_close ?? null;
+              const days = primaryDeadline ? daysUntil(primaryDeadline) : null;
               const isUrgentDeadline = days !== null && days >= 0 && days <= 30;
+
               return (
                 <div key={testType} style={{
-                  background: 'var(--surface)', borderRadius: '14px',
+                  background: 'var(--surface)', borderRadius: '16px',
                   border: `1px solid ${isUrgentDeadline ? '#FDE68A' : 'var(--border)'}`,
-                  padding: '0.875rem 1rem',
+                  overflow: 'hidden',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  {/* Header */}
+                  <div style={{
+                    padding: '0.875rem 1rem 0.75rem',
+                    borderBottom: '1px solid var(--border)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}>
                     <span style={{
                       fontSize: '12px', fontWeight: 700,
-                      color: testType === 'Nessuno' ? '#555' : '#92400E',
-                      background: testType === 'Nessuno' ? '#F5F5F5' : 'rgba(251,191,36,0.15)',
+                      color: isFree ? '#555' : '#92400E',
+                      background: isFree ? '#F5F5F5' : 'rgba(251,191,36,0.15)',
                       padding: '0.25rem 0.625rem', borderRadius: '6px',
                     }}>
-                      {testType === 'Nessuno' ? '✓ Accesso libero' : `📝 ${testType}`}
+                      {isFree ? '✓ Accesso libero' : `📝 ${testType}`}
                     </span>
-                    {closeLabel && (
-                      <span style={{
-                        fontSize: '11px', fontWeight: 600,
-                        color: isUrgentDeadline ? '#B45309' : 'var(--text-3)',
-                      }}>
-                        {days !== null && days >= 0 ? `${days}g ` : ''}{closeLabel}
+                    {primaryDeadline && (
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: isUrgentDeadline ? '#B45309' : 'var(--text-3)' }}>
+                        {days !== null && days >= 0 ? `${days}g · ` : ''}scade {formatDeadline(primaryDeadline)}
                       </span>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
-                    {info.enrollment_open && (
-                      <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>
-                        Apertura <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{formatDeadline(info.enrollment_open)}</span>
-                      </div>
-                    )}
-                    {info.tolc_last_valid && (
-                      <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>
-                        TOLC entro <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{formatDeadline(info.tolc_last_valid)}</span>
-                      </div>
-                    )}
-                    {info.results_date && (
-                      <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>
-                        Esiti <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{formatDeadline(info.results_date)}</span>
-                      </div>
-                    )}
-                  </div>
-                  {info.note && (
-                    <p style={{ fontSize: '10px', color: 'var(--text-3)', marginTop: '0.5rem', lineHeight: 1.5 }}>
-                      {info.note}
-                    </p>
+
+                  {/* Round tabs — only shown when multiple rounds */}
+                  {hasMultipleRounds && (
+                    <div style={{ display: 'flex', gap: '0.375rem', padding: '0.625rem 1rem 0', overflowX: 'auto' }}>
+                      {info.rounds.map((r, ri) => (
+                        <button
+                          key={ri}
+                          onClick={() => setSelectedRounds(prev => ({ ...prev, [testType]: ri }))}
+                          style={{
+                            padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '11px', fontWeight: 600,
+                            border: `1.5px solid ${roundIdx === ri ? '#1B5E52' : 'var(--border)'}`,
+                            background: roundIdx === ri ? '#E4F0ED' : 'var(--surface)',
+                            color: roundIdx === ri ? '#1B5E52' : 'var(--text-3)',
+                            cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                          }}>
+                          {r.round_name ?? `Round ${ri + 1}`}
+                        </button>
+                      ))}
+                    </div>
                   )}
-                  <div style={{ display: 'flex', gap: '0.875rem', marginTop: '0.5rem' }}>
-                    {info.test_url && (
-                      <a href={info.test_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
-                        Info {testType} →
-                      </a>
+
+                  {/* Steps */}
+                  <div style={{ padding: '0.75rem 1rem' }}>
+                    {info.note && (
+                      <p style={{ fontSize: '10px', color: 'var(--text-3)', marginBottom: '0.625rem', lineHeight: 1.5 }}>
+                        ⚠️ {info.note}
+                      </p>
                     )}
-                    {info.bando_url && (
-                      <a href={info.bando_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
-                        Bando →
-                      </a>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {steps.map((step, si) => {
+                        const deadline = activeRound && step.deadline_field
+                          ? activeRound[step.deadline_field] as string | null
+                          : null;
+                        const stepDays = deadline ? daysUntil(deadline) : null;
+                        const stepUrgent = stepDays !== null && stepDays >= 0 && stepDays <= 30;
+
+                        return (
+                          <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem' }}>
+                            <div style={{
+                              width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '10px', fontWeight: 700, marginTop: '1px',
+                              background: '#F0F0F0', color: '#888',
+                              border: '1.5px solid #E0E0E0',
+                            }}>
+                              {si + 1}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-1)' }}>
+                                {step.label_it}
+                                {step.user_input === 'score' && (
+                                  <span style={{ marginLeft: '0.375rem', fontSize: '10px', color: 'var(--text-3)' }}>
+                                    · richiede {step.score_label_it}
+                                  </span>
+                                )}
+                                {step.user_input === 'score_and_type' && (
+                                  <span style={{ marginLeft: '0.375rem', fontSize: '10px', color: 'var(--text-3)' }}>
+                                    · BAT / SAT / ACT + punteggio
+                                  </span>
+                                )}
+                              </div>
+                              {deadline && (
+                                <div style={{ display: 'flex', gap: '0.875rem', marginTop: '2px', flexWrap: 'wrap' }}>
+                                  {step.deadline_field === 'tolc_last_valid' && (
+                                    <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>
+                                      TOLC entro <strong style={{ color: stepUrgent ? '#EF4444' : 'var(--text-2)' }}>{formatDeadline(deadline)}</strong>
+                                    </span>
+                                  )}
+                                  {step.deadline_field === 'test_date' && (
+                                    <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>
+                                      Data test <strong style={{ color: 'var(--text-2)' }}>{formatDeadline(deadline)}</strong>
+                                    </span>
+                                  )}
+                                  {(step.deadline_field === 'application_close' || step.deadline_field === 'enrollment_close') && (
+                                    <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>
+                                      Scadenza <strong style={{ color: stepUrgent ? '#EF4444' : 'var(--text-2)' }}>
+                                        {stepDays !== null && stepDays >= 0 ? `${stepDays}gg · ` : ''}{formatDeadline(deadline)}
+                                      </strong>
+                                    </span>
+                                  )}
+                                  {/* Results date shown on last step */}
+                                  {si === steps.length - 1 && activeRound?.results_date && (
+                                    <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>
+                                      Esiti <strong style={{ color: 'var(--text-2)' }}>{formatDeadline(activeRound.results_date)}</strong>
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {/* Show results_date on last free step too */}
+                              {!deadline && si === steps.length - 1 && activeRound?.results_date && (
+                                <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>
+                                  Esiti <strong style={{ color: 'var(--text-2)' }}>{formatDeadline(activeRound.results_date)}</strong>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Links */}
+                    <div style={{ display: 'flex', gap: '0.875rem', marginTop: '0.75rem' }}>
+                      {info.test_url && (
+                        <a href={info.test_url} target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
+                          Info {testType} →
+                        </a>
+                      )}
+                      {info.bando_url && (
+                        <a href={info.bando_url} target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
+                          Bando ufficiale →
+                        </a>
+                      )}
+                    </div>
+                    {info.estimated && (
+                      <p style={{ fontSize: '9px', color: 'var(--text-3)', marginTop: '0.375rem' }}>
+                        Date basate su {info.sourceYear} — verifica il bando aggiornato
+                      </p>
                     )}
                   </div>
                 </div>

@@ -1,25 +1,176 @@
 import admissionInfoRaw from '@/data/admission_info.json';
 import classeToTestRaw from '@/data/classe_to_test.json';
 
-export interface AdmissionInfo {
-  test: string;
-  test_url: string | null;
+export type PathwayType = 'tolc' | 'application' | 'internal_test' | 'imat' | 'free';
+
+export interface AdmissionRound {
+  round_name: string | null;
+  round_number: number | null;
+  application_open: string | null;
+  /** Primary deadline across all pathway types. */
+  application_close: string | null;
+  tolc_last_valid: string | null;
+  test_date: string | null;
+  results_date: string | null;
   enrollment_open: string | null;
   enrollment_close: string | null;
-  tolc_last_valid: string | null;
-  results_date: string | null;
+}
+
+export interface AdmissionInfo {
+  pathway_type: PathwayType;
+  test: string;
+  test_url: string | null;
   bando_url: string | null;
+  rounds: AdmissionRound[];
   note: string | null;
   // Set at lookup time, not stored in JSON
   estimated?: boolean;
   sourceYear?: string;
 }
 
-// JSON shape: university → year → testType → AdmissionInfo
+export interface StepDef {
+  id: string;
+  label_it: string;
+  label_en: string;
+  /** Which field of AdmissionRound is the deadline for this step. null = no deadline. */
+  deadline_field: keyof AdmissionRound | null;
+  /** Step IDs that must be completed before this step unlocks. */
+  requires: string[];
+  user_input: 'confirm' | 'score' | 'score_and_type';
+  score_label_it?: string;
+  score_label_en?: string;
+}
+
+export const PATHWAY_STEPS: Record<PathwayType, StepDef[]> = {
+  tolc: [
+    {
+      id: 'register_cisia',
+      label_it: 'Iscriviti a CISIA',
+      label_en: 'Register on CISIA',
+      deadline_field: null,
+      requires: [],
+      user_input: 'confirm',
+    },
+    {
+      id: 'take_tolc',
+      label_it: 'Sostieni il TOLC',
+      label_en: 'Take the TOLC',
+      deadline_field: 'tolc_last_valid',
+      requires: ['register_cisia'],
+      user_input: 'score',
+      score_label_it: 'Punteggio TOLC',
+      score_label_en: 'TOLC score',
+    },
+    {
+      id: 'enroll',
+      label_it: 'Iscriviti al corso',
+      label_en: 'Enroll in the course',
+      deadline_field: 'application_close',
+      requires: ['take_tolc'],
+      user_input: 'confirm',
+    },
+  ],
+  application: [
+    {
+      id: 'apply',
+      label_it: 'Invia la domanda',
+      label_en: 'Submit application',
+      deadline_field: 'application_close',
+      requires: [],
+      user_input: 'confirm',
+    },
+    {
+      id: 'take_test',
+      label_it: 'Sostieni il test di ammissione',
+      label_en: 'Take the admission test',
+      deadline_field: 'test_date',
+      requires: ['apply'],
+      user_input: 'score_and_type',
+      score_label_it: 'Risultato',
+      score_label_en: 'Score',
+    },
+    {
+      id: 'enroll',
+      label_it: 'Immatricolati',
+      label_en: 'Complete enrollment',
+      deadline_field: 'enrollment_close',
+      requires: ['take_test'],
+      user_input: 'confirm',
+    },
+  ],
+  internal_test: [
+    {
+      id: 'register',
+      label_it: 'Registrati al test',
+      label_en: 'Register for the test',
+      deadline_field: 'application_close',
+      requires: [],
+      user_input: 'confirm',
+    },
+    {
+      id: 'take_test',
+      label_it: 'Sostieni il test',
+      label_en: 'Take the test',
+      deadline_field: 'test_date',
+      requires: ['register'],
+      user_input: 'score',
+      score_label_it: 'Punteggio',
+      score_label_en: 'Score',
+    },
+    {
+      id: 'enroll',
+      label_it: 'Immatricolati',
+      label_en: 'Complete enrollment',
+      deadline_field: 'enrollment_close',
+      requires: ['take_test'],
+      user_input: 'confirm',
+    },
+  ],
+  imat: [
+    {
+      id: 'register',
+      label_it: "Registrati per l'IMAT",
+      label_en: 'Register for IMAT',
+      deadline_field: 'application_close',
+      requires: [],
+      user_input: 'confirm',
+    },
+    {
+      id: 'take_test',
+      label_it: "Sostieni l'IMAT",
+      label_en: 'Take the IMAT',
+      deadline_field: 'test_date',
+      requires: ['register'],
+      user_input: 'score',
+      score_label_it: 'Punteggio IMAT',
+      score_label_en: 'IMAT score',
+    },
+    {
+      id: 'enroll',
+      label_it: 'Immatricolati',
+      label_en: 'Complete enrollment',
+      deadline_field: 'enrollment_close',
+      requires: ['take_test'],
+      user_input: 'confirm',
+    },
+  ],
+  free: [
+    {
+      id: 'enroll',
+      label_it: 'Immatricolati',
+      label_en: 'Enroll',
+      deadline_field: 'application_close',
+      requires: [],
+      user_input: 'confirm',
+    },
+  ],
+};
+
+// ── JSON imports ─────────────────────────────────────────────────────
+
 const admissionInfo = admissionInfoRaw as Record<string, Record<string, Record<string, AdmissionInfo>>>;
 const classeToTest = classeToTestRaw as Record<string, string>;
 
-// Case-insensitive university name lookup
 const uniLowerMap = new Map<string, string>(
   Object.keys(admissionInfo).map(k => [k.toLowerCase(), k])
 );
@@ -34,17 +185,11 @@ function resolveUniKey(universita: string): string | null {
     : (uniLowerMap.get(universita.toLowerCase()) ?? null);
 }
 
+// ── Core lookup ──────────────────────────────────────────────────────
+
 /**
- * Returns admission info for a course, year-aware.
- *
- * Year resolution:
- *   1. Try targetYear exactly
- *   2. Fall back to most recent available year → marks info.estimated = true
- *
- * Within each year, uses a 3-level cascade:
- *   1. Direct classe key (for private unis with per-class overrides)
- *   2. TOLC type derived from classe
- *   3. "_all" wildcard
+ * Year resolution: prefer exact targetYear, fall back to most recent → marks estimated=true.
+ * Key cascade: direct classe key → TOLC type → _all wildcard → 'Nessuno' if testType is 'Nessuno'.
  */
 export function getAdmissionInfo(
   universita: string,
@@ -58,7 +203,6 @@ export function getAdmissionInfo(
   const availableYears = Object.keys(uniYears).sort();
   if (availableYears.length === 0) return null;
 
-  // Pick year: prefer exact match, else most recent
   const year = targetYear && uniYears[targetYear]
     ? targetYear
     : availableYears[availableYears.length - 1];
@@ -83,18 +227,55 @@ export function getAdmissionInfo(
   }
 
   if (!info) return null;
-
-  // Attach metadata without mutating the original object
   return { ...info, estimated, sourceYear: year };
 }
 
-/** Returns just the test name for a quick badge label. */
 export function getTestLabel(universita: string, classe: string): string | null {
-  const info = getAdmissionInfo(universita, classe);
-  return info?.test ?? null;
+  return getAdmissionInfo(universita, classe)?.test ?? null;
 }
 
-/** Formats a YYYY-MM-DD date as "15 lug" / "15 jul" */
+// ── Round helpers ────────────────────────────────────────────────────
+
+/** Next upcoming round by application_close; falls back to last round if all have passed. */
+export function getActiveRound(info: AdmissionInfo): AdmissionRound | null {
+  if (!info.rounds || info.rounds.length === 0) return null;
+  const now = Date.now();
+  const upcoming = info.rounds
+    .filter(r => r.application_close && new Date(r.application_close).getTime() > now)
+    .sort((a, b) => (a.application_close ?? '').localeCompare(b.application_close ?? ''));
+  return upcoming[0] ?? info.rounds[info.rounds.length - 1];
+}
+
+/** Single source of truth for "the next critical deadline" across all pathway types. */
+export function getPrimaryDeadline(info: AdmissionInfo): string | null {
+  return getActiveRound(info)?.application_close ?? null;
+}
+
+// ── Step helpers ─────────────────────────────────────────────────────
+
+/** Returns the first unlocked, not-yet-done step. null = all steps completed. */
+export function getActiveStep(
+  pathwayType: PathwayType,
+  completedSteps: string[],
+): StepDef | null {
+  for (const step of PATHWAY_STEPS[pathwayType]) {
+    if (completedSteps.includes(step.id)) continue;
+    if (step.requires.every(r => completedSteps.includes(r))) return step;
+  }
+  return null;
+}
+
+export function getStepDeadline(step: StepDef, round: AdmissionRound): string | null {
+  if (!step.deadline_field) return null;
+  return round[step.deadline_field] as string | null;
+}
+
+export function isAllDone(pathwayType: PathwayType, completedSteps: string[]): boolean {
+  return PATHWAY_STEPS[pathwayType].every(s => completedSteps.includes(s.id));
+}
+
+// ── Date utils ───────────────────────────────────────────────────────
+
 export function formatDeadline(dateStr: string | null, lang: 'it' | 'en' = 'it'): string | null {
   if (!dateStr) return null;
   const d = new Date(dateStr);
@@ -102,14 +283,12 @@ export function formatDeadline(dateStr: string | null, lang: 'it' | 'en' = 'it')
   return d.toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-GB', { day: 'numeric', month: 'short' });
 }
 
-/** True if the enrollment deadline is within the next N days. */
 export function isUrgent(dateStr: string | null, days = 30): boolean {
   if (!dateStr) return false;
   const diff = new Date(dateStr).getTime() - Date.now();
   return diff > 0 && diff < days * 86_400_000;
 }
 
-/** Days remaining until a deadline (negative = already passed). */
 export function daysUntil(dateStr: string | null): number | null {
   if (!dateStr) return null;
   const d = new Date(dateStr);
@@ -117,7 +296,8 @@ export function daysUntil(dateStr: string | null): number | null {
   return Math.ceil((d.getTime() - Date.now()) / 86_400_000);
 }
 
-/** All test types available for a given university and year (for the university page). */
+// ── Uni page helper ──────────────────────────────────────────────────
+
 export function getUniAdmissionEntries(
   universita: string,
   targetYear?: string,
@@ -138,10 +318,13 @@ export function getUniAdmissionEntries(
 
   return Object.entries(uniInfo)
     .filter(([key]) => key !== '_all')
-    .map(([testType, info]) => ({ testType, info: { ...info, estimated, sourceYear: year } }))
+    .map(([testType, info]) => ({
+      testType,
+      info: { ...info, estimated, sourceYear: year } as AdmissionInfo,
+    }))
     .sort((a, b) => {
-      const da = a.info.enrollment_close ?? '9999';
-      const db = b.info.enrollment_close ?? '9999';
+      const da = getPrimaryDeadline(a.info) ?? '9999';
+      const db = getPrimaryDeadline(b.info) ?? '9999';
       return da.localeCompare(db);
     });
 }

@@ -2,13 +2,23 @@
   "Politecnico di Milano": {
     "2026": {
       "TOLC-I": {
+        "pathway_type": "tolc",
         "test": "TOLC-I",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-i/",
-        "enrollment_open": "2026-05-05",
-        "enrollment_close": "2026-06-18",
-        "tolc_last_valid": "2026-06-13",
-        "results_date": "2026-06-23",
         "bando_url": "https://www.polimi.it/fileadmin/user_upload/futuri_studenti/Ingegneria_LT/TOLBandoLaureaIngegneria25-26.pdf",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2026-05-05",
+            "application_close": "2026-06-18",
+            "tolc_last_valid": "2026-06-13",
+            "test_date": null,
+            "results_date": "2026-06-23",
+            "enrollment_open": "2026-05-05",
+            "enrollment_close": "2026-06-18"
+          }
+        ],
         "note": null
       }
     }
@@ -16,83 +26,163 @@
   "Università degli studi di Milano": {
     "2026": {
       "TOLC-B": {
+        "pathway_type": "tolc",
         "test": "TOLC-B",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-b/",
-        "enrollment_open": "2026-03-13",
-        "enrollment_close": "2026-09-11",
-        "tolc_last_valid": "2026-09-11",
-        "results_date": "2026-09-17",
         "bando_url": "https://apps.unimi.it/files/bandi/call-2026-t-biological-sciences-%28classe-l-13-r%29.pdf",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2026-03-13",
+            "application_close": "2026-09-11",
+            "tolc_last_valid": "2026-09-11",
+            "test_date": null,
+            "results_date": "2026-09-17",
+            "enrollment_open": "2026-03-13",
+            "enrollment_close": "2026-09-11"
+          }
+        ],
         "note": null
       },
       "TOLC-E": {
+        "pathway_type": "tolc",
         "test": "TOLC-E",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-e/",
-        "enrollment_open": "2026-03-13",
-        "enrollment_close": "2026-08-29",
-        "tolc_last_valid": "2026-08-29",
-        "results_date": "2026-09-04",
         "bando_url": "https://apps.unimi.it/files/bandi/bando-2026-t-economia-e-management-%28ema%29-%28classi-l-18-r-l-33-r%29.pdf",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2026-03-13",
+            "application_close": "2026-08-29",
+            "tolc_last_valid": "2026-08-29",
+            "test_date": null,
+            "results_date": "2026-09-04",
+            "enrollment_open": "2026-03-13",
+            "enrollment_close": "2026-08-29"
+          }
+        ],
         "note": null
       },
       "TOLC-F": {
+        "pathway_type": "tolc",
         "test": "TOLC-F",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-f/",
-        "enrollment_open": "2026-07-15",
-        "enrollment_close": "2026-09-16",
-        "tolc_last_valid": "2026-09-11",
-        "results_date": null,
         "bando_url": "https://apps.unimi.it/files/bandi/call-2026-1-toxicology-for-the-human-and-environmental-safety-%28classe-l-29-r%29.pdf",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2026-07-15",
+            "application_close": "2026-09-16",
+            "tolc_last_valid": "2026-09-11",
+            "test_date": null,
+            "results_date": null,
+            "enrollment_open": "2026-07-15",
+            "enrollment_close": "2026-09-16"
+          }
+        ],
         "note": null
       },
       "TOLC-I": {
+        "pathway_type": "tolc",
         "test": "TOLC-I",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-i/",
-        "enrollment_open": null,
-        "enrollment_close": null,
-        "tolc_last_valid": null,
-        "results_date": null,
         "bando_url": "https://www.unimi.it/it/studiare/frequentare-un-corso-di-laurea/iscriversi/iscriversi-una-prima-laurea/test-tolc-cisia",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": null,
+            "application_close": null,
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": null,
+            "enrollment_open": null,
+            "enrollment_close": null
+          }
+        ],
         "note": "Scadenze variabili per corso, verificare il bando ufficiale."
       },
       "TOLC-S": {
+        "pathway_type": "tolc",
         "test": "TOLC-S",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-s/",
-        "enrollment_open": "2026-03-13",
-        "enrollment_close": "2026-09-11",
-        "tolc_last_valid": "2026-09-11",
-        "results_date": "2026-09-17",
         "bando_url": "https://apps.unimi.it/files/bandi/call-2026-1-natural-sciences-%28classe-l-32-r%29.pdf",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2026-03-13",
+            "application_close": "2026-09-11",
+            "tolc_last_valid": "2026-09-11",
+            "test_date": null,
+            "results_date": "2026-09-17",
+            "enrollment_open": "2026-03-13",
+            "enrollment_close": "2026-09-11"
+          }
+        ],
         "note": null
       },
       "TOLC-SU": {
+        "pathway_type": "tolc",
         "test": "TOLC-SU",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-su/",
-        "enrollment_open": "2026-07-15",
-        "enrollment_close": "2026-09-16",
-        "tolc_last_valid": "2026-09-11",
-        "results_date": null,
         "bando_url": "https://apps.unimi.it/files/bandi/bando-2026-1-lettere-%28classe-l-10-r%29.pdf",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2026-07-15",
+            "application_close": "2026-09-16",
+            "tolc_last_valid": "2026-09-11",
+            "test_date": null,
+            "results_date": null,
+            "enrollment_open": "2026-07-15",
+            "enrollment_close": "2026-09-16"
+          }
+        ],
         "note": null
       },
       "TOLC-AV": {
+        "pathway_type": "tolc",
         "test": "TOLC-AV",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-av/",
-        "enrollment_open": null,
-        "enrollment_close": null,
-        "tolc_last_valid": null,
-        "results_date": null,
         "bando_url": "https://www.unimi.it/it/studiare/frequentare-un-corso-di-laurea/iscriversi/iscriversi-una-prima-laurea/test-tolc-cisia",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": null,
+            "application_close": null,
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": null,
+            "enrollment_open": null,
+            "enrollment_close": null
+          }
+        ],
         "note": "Scadenze variabili per corso, verificare il bando ufficiale."
       },
       "Nessuno": {
-        "test": "Nessuno",
+        "pathway_type": "free",
+        "test": "Accesso libero",
         "test_url": null,
-        "enrollment_open": null,
-        "enrollment_close": null,
-        "tolc_last_valid": null,
-        "results_date": null,
         "bando_url": "https://www.unimi.it/it/studiare/immatricolarsi-e-iscriversi",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": null,
+            "application_close": null,
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": null,
+            "enrollment_open": null,
+            "enrollment_close": null
+          }
+        ],
         "note": null
       }
     }
@@ -100,53 +190,103 @@
   "Università degli studi di Milano-Bicocca": {
     "2026": {
       "TOLC-B": {
+        "pathway_type": "tolc",
         "test": "TOLC-B",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-b/",
-        "enrollment_open": null,
-        "enrollment_close": "2026-09-02",
-        "tolc_last_valid": "2026-08-29",
-        "results_date": "2026-09-11",
         "bando_url": "https://www.unimib.it/sites/default/files/2025-04/Prot_Bando%20di%20ammissione%20Biotcnologie_Scienze_Biologiche_25_26_0.pdf",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": null,
+            "application_close": "2026-09-02",
+            "tolc_last_valid": "2026-08-29",
+            "test_date": null,
+            "results_date": "2026-09-11",
+            "enrollment_open": null,
+            "enrollment_close": "2026-09-02"
+          }
+        ],
         "note": null
       },
       "TOLC-E": {
+        "pathway_type": "tolc",
         "test": "TOLC-E",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-e/",
-        "enrollment_open": "2026-04-04",
-        "enrollment_close": "2026-09-08",
-        "tolc_last_valid": "2026-09-05",
-        "results_date": "2026-07-30",
         "bando_url": "https://www.unimib.it/sites/default/files/2025-04/Bando%20di%20ammissione%20triennali%20Economia_ITA_2025_2026.pdf",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2026-04-04",
+            "application_close": "2026-09-08",
+            "tolc_last_valid": "2026-09-05",
+            "test_date": null,
+            "results_date": "2026-07-30",
+            "enrollment_open": "2026-04-04",
+            "enrollment_close": "2026-09-08"
+          }
+        ],
         "note": null
       },
       "TOLC-S": {
+        "pathway_type": "tolc",
         "test": "TOLC-S",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-s/",
-        "enrollment_open": null,
-        "enrollment_close": "2026-09-02",
-        "tolc_last_valid": "2026-08-29",
-        "results_date": "2026-09-11",
         "bando_url": "https://www.unimib.it/sites/default/files/2025-03/PROT_Bando%20di%20ammissione%20INFORMATICA_25_26.pdf",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": null,
+            "application_close": "2026-09-02",
+            "tolc_last_valid": "2026-08-29",
+            "test_date": null,
+            "results_date": "2026-09-11",
+            "enrollment_open": null,
+            "enrollment_close": "2026-09-02"
+          }
+        ],
         "note": null
       },
       "TOLC-SU": {
+        "pathway_type": "tolc",
         "test": "TOLC-SU",
         "test_url": "https://www.cisiaonline.it/tolc/tolc-su/",
-        "enrollment_open": "2026-07-14",
-        "enrollment_close": "2026-09-12",
-        "tolc_last_valid": "2026-09-12",
-        "results_date": "2026-09-17",
         "bando_url": "https://www.unimib.it/sites/default/files/2025-04/Bando%20di%20ammissione%20Scienze%20dell%27educazione%20A.A%202025-2026.pdf",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2026-07-14",
+            "application_close": "2026-09-12",
+            "tolc_last_valid": "2026-09-12",
+            "test_date": null,
+            "results_date": "2026-09-17",
+            "enrollment_open": "2026-07-14",
+            "enrollment_close": "2026-09-12"
+          }
+        ],
         "note": null
       },
       "Nessuno": {
-        "test": "Nessuno",
+        "pathway_type": "free",
+        "test": "Accesso libero",
         "test_url": null,
-        "enrollment_open": "2026-07-14",
-        "enrollment_close": "2026-09-30",
-        "tolc_last_valid": null,
-        "results_date": null,
         "bando_url": "https://www.unimib.it/studiare/servizi-studenti-e-laureati/segreterie/immatricolazione",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2026-07-14",
+            "application_close": "2026-09-30",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": null,
+            "enrollment_open": "2026-07-14",
+            "enrollment_close": "2026-09-30"
+          }
+        ],
         "note": null
       }
     }

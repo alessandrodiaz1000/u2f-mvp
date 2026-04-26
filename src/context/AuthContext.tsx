@@ -1,6 +1,15 @@
 'use client';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
+export interface CourseAdmissionProgress {
+  course_id: number;
+  target_round: number;
+  completed_steps: string[];
+  test_score: number | null;
+  test_type: string | null;
+  test_date_taken: string | null;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -21,13 +30,14 @@ export interface UserProfile {
   langPreference: 'italiano' | 'inglese' | 'indifferente' | '';
   gradeAvg: 'lt7' | '7to8' | '8to9' | '9to10' | '';
   startYear: '2025' | '2026' | '2027' | '2028' | '';
+  admissionTracking: CourseAdmissionProgress[];
 }
 
 interface AuthCtx {
   user: UserProfile | null;
   login: (email: string, name: string) => void;
   logout: () => void;
-  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg' | 'startYear'>) => void;
+  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg' | 'startYear' | 'admissionTracking'>) => void;
   swipeRight: (id: number) => void;
   swipeLeft: (id: number) => void;
   addFavorite: (id: number) => void;
@@ -37,6 +47,7 @@ interface AuthCtx {
   undoSwipe: (id: number, wasRight: boolean) => void;
   trackComparison: () => void;
   updateProfile: (data: Partial<UserProfile>) => void;
+  updateAdmissionProgress: (courseId: number, update: Partial<CourseAdmissionProgress>) => void;
 }
 
 const AuthContext = createContext<AuthCtx>({
@@ -53,6 +64,7 @@ const AuthContext = createContext<AuthCtx>({
   undoSwipe: () => {},
   trackComparison: () => {},
   updateProfile: () => {},
+  updateAdmissionProgress: () => {},
 });
 
 const STORAGE_KEY = 'u2f_user';
@@ -81,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!parsed.langPreference) parsed.langPreference = '';
         if (!parsed.gradeAvg)       parsed.gradeAvg       = '';
         if (!parsed.startYear)      parsed.startYear      = '';
+        if (!Array.isArray(parsed.admissionTracking)) parsed.admissionTracking = [];
         setUser(parsed);
       }
     } catch {}
@@ -101,12 +114,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       areas: [], diploma: '', city: '', degreeType: '',
       onboarded: false, favorites: [], swipedIds: [], comparisonsCount: 0, scores: {},
       uniPreference: '', langPreference: '', gradeAvg: '', startYear: '',
+      admissionTracking: [],
     });
   };
 
   const logout = () => persist(null);
 
-  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg' | 'startYear'>) => {
+  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg' | 'startYear' | 'admissionTracking'>) => {
     if (!user) return;
     persist({ ...user, ...data, onboarded: true });
   };
@@ -161,8 +175,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist({ ...user, ...data });
   };
 
+  const updateAdmissionProgress = (courseId: number, update: Partial<CourseAdmissionProgress>) => {
+    if (!user) return;
+    const existing = user.admissionTracking ?? [];
+    const idx = existing.findIndex(p => p.course_id === courseId);
+    if (idx >= 0) {
+      const updated = [...existing];
+      updated[idx] = { ...updated[idx], ...update };
+      persist({ ...user, admissionTracking: updated });
+    } else {
+      persist({
+        ...user,
+        admissionTracking: [
+          ...existing,
+          { course_id: courseId, target_round: 1, completed_steps: [], test_score: null, test_type: null, test_date_taken: null, ...update },
+        ],
+      });
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores, undoSwipe, trackComparison, updateProfile }}>
+    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores, undoSwipe, trackComparison, updateProfile, updateAdmissionProgress }}>
       {children}
     </AuthContext.Provider>
   );
