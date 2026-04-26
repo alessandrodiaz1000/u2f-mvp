@@ -353,7 +353,7 @@ export default function DashboardPage() {
                   {nextAdmissionDays !== null && nextAdmissionDays >= 0
                     ? ` · ${nextAdmissionDays}gg`
                     : nextAdmission.stepDeadline ? '' : ' · nessuna scadenza'}
-                  {nextAdmission.stepDeadline && ` · entro ${formatDeadline(nextAdmission.stepDeadline)}`}
+                  {nextAdmission.stepDeadline && ` · ${nextAdmission.estimated ? '~' : ''}entro ${formatDeadline(nextAdmission.stepDeadline)}`}
                 </p>
               </div>
               {nextAdmissionUrgent && (
@@ -683,7 +683,7 @@ export default function DashboardPage() {
                             </span>
                             {isCurrent && entry.stepDeadline && (
                               <span style={{ marginLeft: '0.375rem', fontSize: '10px', fontWeight: 600, color: stepUrgent ? '#EF4444' : '#888' }}>
-                                {stepDays !== null && stepDays >= 0 ? `${stepDays}gg · ` : ''}entro {formatDeadline(entry.stepDeadline)}
+                                {stepDays !== null && stepDays >= 0 ? `${stepDays}gg · ` : ''}{entry.estimated ? '~' : ''}entro {formatDeadline(entry.stepDeadline)}
                               </span>
                             )}
                             {isScoreDone && (

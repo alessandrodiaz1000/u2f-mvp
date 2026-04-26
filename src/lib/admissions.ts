@@ -179,6 +179,27 @@ function normalizeClasse(classe: string): string {
   return classe.replace(/\s+R$/, '').trim();
 }
 
+function shiftDate(dateStr: string | null, years: number): string | null {
+  if (!dateStr || years === 0) return dateStr;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  d.setFullYear(d.getFullYear() + years);
+  return d.toISOString().split('T')[0];
+}
+
+function shiftRound(round: AdmissionRound, years: number): AdmissionRound {
+  return {
+    ...round,
+    application_open:  shiftDate(round.application_open,  years),
+    application_close: shiftDate(round.application_close, years),
+    tolc_last_valid:   shiftDate(round.tolc_last_valid,   years),
+    test_date:         shiftDate(round.test_date,         years),
+    results_date:      shiftDate(round.results_date,      years),
+    enrollment_open:   shiftDate(round.enrollment_open,   years),
+    enrollment_close:  shiftDate(round.enrollment_close,  years),
+  };
+}
+
 function resolveUniKey(universita: string): string | null {
   return admissionInfo[universita]
     ? universita
@@ -227,7 +248,14 @@ export function getAdmissionInfo(
   }
 
   if (!info) return null;
-  return { ...info, estimated, sourceYear: year };
+
+  // When falling back to a different year, shift all round dates to targetYear
+  const yearDiff = targetYear && estimated ? parseInt(targetYear) - parseInt(year) : 0;
+  const rounds = yearDiff > 0
+    ? info.rounds.map(r => shiftRound(r, yearDiff))
+    : info.rounds;
+
+  return { ...info, rounds, estimated, sourceYear: year };
 }
 
 export function getTestLabel(universita: string, classe: string): string | null {

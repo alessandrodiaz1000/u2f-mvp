@@ -235,18 +235,18 @@ export default function UniversityPage({ params }: { params: { id: string } }) {
                                 <div style={{ display: 'flex', gap: '0.875rem', marginTop: '2px', flexWrap: 'wrap' }}>
                                   {step.deadline_field === 'tolc_last_valid' && (
                                     <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>
-                                      TOLC entro <strong style={{ color: stepUrgent ? '#EF4444' : 'var(--text-2)' }}>{formatDeadline(deadline)}</strong>
+                                      TOLC entro <strong style={{ color: stepUrgent ? '#EF4444' : 'var(--text-2)' }}>{info.estimated ? '~' : ''}{formatDeadline(deadline)}</strong>
                                     </span>
                                   )}
                                   {step.deadline_field === 'test_date' && (
                                     <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>
-                                      Data test <strong style={{ color: 'var(--text-2)' }}>{formatDeadline(deadline)}</strong>
+                                      Data test <strong style={{ color: 'var(--text-2)' }}>{info.estimated ? '~' : ''}{formatDeadline(deadline)}</strong>
                                     </span>
                                   )}
                                   {(step.deadline_field === 'application_close' || step.deadline_field === 'enrollment_close') && (
                                     <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>
                                       Scadenza <strong style={{ color: stepUrgent ? '#EF4444' : 'var(--text-2)' }}>
-                                        {stepDays !== null && stepDays >= 0 ? `${stepDays}gg · ` : ''}{formatDeadline(deadline)}
+                                        {stepDays !== null && stepDays >= 0 ? `${stepDays}gg · ` : ''}{info.estimated ? '~' : ''}{formatDeadline(deadline)}
                                       </strong>
                                     </span>
                                   )}
