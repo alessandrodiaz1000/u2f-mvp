@@ -557,6 +557,29 @@ export default function DashboardPage() {
                 setScoreInput('');
               };
 
+              const handleUndo = (stepIdx: number) => {
+                const stepsToRemove = entry.allSteps.slice(stepIdx).map(s => s.id);
+                const hasScoreStep = entry.allSteps.slice(stepIdx).some(s => s.user_input !== 'confirm');
+                updateAdmissionProgress(entry.course_id, {
+                  completed_steps: entry.completedSteps.filter(id => !stepsToRemove.includes(id)),
+                  ...(hasScoreStep ? { test_score: null, test_type: null } : {}),
+                });
+                setOpenCourseId(null);
+                setScoreInput('');
+              };
+
+              const handleUndoAndEdit = (stepIdx: number) => {
+                const stepsToRemove = entry.allSteps.slice(stepIdx).map(s => s.id);
+                updateAdmissionProgress(entry.course_id, {
+                  completed_steps: entry.completedSteps.filter(id => !stepsToRemove.includes(id)),
+                  test_score: null,
+                  test_type: null,
+                });
+                setScoreInput(entry.testScore !== null ? String(entry.testScore) : '');
+                if (entry.testType && entry.pathway_type === 'application') setTestTypeInput(entry.testType);
+                setOpenCourseId(entry.course_id);
+              };
+
               return (
                 <div key={entry.course_id} style={{
                   borderBottom: i < percorso.length - 1 ? '1px solid #F5F5F5' : 'none',
@@ -591,6 +614,8 @@ export default function DashboardPage() {
                         const stepDays = isCurrent && entry.stepDeadline ? daysUntil(entry.stepDeadline) : null;
                         const stepUrgent = stepDays !== null && stepDays >= 0 && stepDays <= 30;
 
+                        const isScoreDone = isDone && step.user_input !== 'confirm' && entry.testScore !== null;
+
                         return (
                           <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
                             {/* Step indicator */}
@@ -620,12 +645,30 @@ export default function DashboardPage() {
                                   {stepDays !== null && stepDays >= 0 ? `${stepDays}gg · ` : ''}entro {formatDeadline(entry.stepDeadline)}
                                 </span>
                               )}
-                              {isDone && step.user_input !== 'confirm' && entry.testScore !== null && si === entry.stepIndex - 1 && (
+                              {isScoreDone && (
                                 <span style={{ marginLeft: '0.375rem', fontSize: '10px', color: '#1B5E52', fontWeight: 600 }}>
                                   {entry.testType && entry.pathway_type === 'application' ? `${entry.testType} · ` : ''}{entry.testScore}
+                                  <button
+                                    onClick={() => handleUndoAndEdit(si)}
+                                    style={{ marginLeft: '0.375rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '10px', color: '#AAA', padding: 0 }}>
+                                    modifica
+                                  </button>
                                 </span>
                               )}
                             </div>
+                            {/* Undo button — only on completed steps without a score (score steps use "modifica") */}
+                            {isDone && !isScoreDone && (
+                              <button
+                                onClick={() => handleUndo(si)}
+                                title="Annulla"
+                                style={{
+                                  background: 'none', border: 'none', cursor: 'pointer',
+                                  fontSize: '12px', color: '#DDD', padding: '0 0.125rem',
+                                  flexShrink: 0, lineHeight: 1, marginTop: '2px',
+                                }}>
+                                ↩
+                              </button>
+                            )}
                           </div>
                         );
                       })}
