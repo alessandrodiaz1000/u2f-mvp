@@ -8,6 +8,7 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useAuth } from '@/context/AuthContext';
+import { IconExtLink } from '@/components/Icons';
 import { useRouter } from 'next/navigation';
 
 type Tab = 'uni' | 'corsi';
@@ -391,7 +392,7 @@ export default function EsploraPage() {
                     textDecoration: 'none',
                   }}
                 >
-                  🌐 Sito ufficiale
+                  <IconExtLink size={15} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Sito ufficiale
                 </a>
               )}
               <button

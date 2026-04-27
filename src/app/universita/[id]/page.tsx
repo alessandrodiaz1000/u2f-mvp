@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getMurBySlug, getCoursesForMur, DOCTORAL_ONLY } from '@/lib/data';
 import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -20,6 +21,7 @@ const DEGREE_TYPES = ['Triennale', 'Magistrale', 'Ciclo Unico'];
 export default function UniversityPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const { t } = useLanguage();
+  const router = useRouter();
   const [search, setSearch]               = useState('');
   const [selectedDegrees, setSelectedDegrees] = useState<string[]>([]);
   const [selectedRounds, setSelectedRounds] = useState<Record<string, number>>({});
@@ -65,16 +67,21 @@ export default function UniversityPage({ params }: { params: { id: string } }) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         gap: '0.75rem',
       }}>
-        <Link href="/esplora" style={{
-          display: 'flex', alignItems: 'center', gap: '0.25rem',
-          fontSize: '13px', color: 'var(--accent)', fontWeight: 500,
-          textDecoration: 'none', flexShrink: 0,
-        }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.375rem',
+            fontSize: '13px', color: 'var(--accent)', fontWeight: 600,
+            background: 'var(--accent-bg)', border: 'none',
+            padding: '0.4rem 0.75rem', borderRadius: '8px',
+            cursor: 'pointer', flexShrink: 0,
+          }}
+        >
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          {t.university.back}
-        </Link>
+          Indietro
+        </button>
         <LanguageSwitcher />
       </header>
 
@@ -199,7 +206,7 @@ export default function UniversityPage({ params }: { params: { id: string } }) {
                   <div style={{ padding: '0.75rem 1rem' }}>
                     {info.note && (
                       <p style={{ fontSize: '10px', color: 'var(--text-3)', marginBottom: '0.625rem', lineHeight: 1.5 }}>
-                        ⚠️ {info.note}
+                        {info.note}
                       </p>
                     )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
