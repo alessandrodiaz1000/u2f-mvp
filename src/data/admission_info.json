@@ -290,5 +290,437 @@
         "note": null
       }
     }
+  },
+  "Università Commerciale \"Luigi Bocconi\" MILANO": {
+    "2026": {
+      "L-14": {
+        "pathway_type": "application",
+        "test": "Bocconi online test – Law / SAT / ACT / LSAT",
+        "test_url": "https://www.unibocconi.it/it/programmi/lauree-triennali/ammissione",
+        "bando_url": "https://www.unibocconi.it/it/programmi/lauree-triennali/ammissione",
+        "rounds": [
+          {
+            "round_name": "Early",
+            "round_number": 1,
+            "application_open": "2025-09-03",
+            "application_close": "2025-09-26",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": "2025-11-12",
+            "enrollment_open": "2025-11-12",
+            "enrollment_close": "2025-11-26"
+          },
+          {
+            "round_name": "Winter",
+            "round_number": 2,
+            "application_open": "2025-11-28",
+            "application_close": "2026-01-23",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": "2026-03-11",
+            "enrollment_open": "2026-03-11",
+            "enrollment_close": "2026-03-26"
+          },
+          {
+            "round_name": "Spring",
+            "round_number": 3,
+            "application_open": "2026-03-27",
+            "application_close": "2026-04-13",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": "2026-05-15",
+            "enrollment_open": "2026-05-15",
+            "enrollment_close": "2026-05-31"
+          }
+        ],
+        "note": "Percorso Law dedicato per Global Law e Giurisprudenza. Test ammessi: Bocconi online test – Law, SAT, ACT, LSAT."
+      },
+      "LMG/01": {
+        "pathway_type": "application",
+        "test": "Bocconi online test – Law / SAT / ACT / LSAT",
+        "test_url": "https://www.unibocconi.it/it/programmi/lauree-triennali/ammissione",
+        "bando_url": "https://www.unibocconi.it/it/programmi/lauree-triennali/ammissione",
+        "rounds": [
+          {
+            "round_name": "Early",
+            "round_number": 1,
+            "application_open": "2025-09-03",
+            "application_close": "2025-09-26",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": "2025-11-12",
+            "enrollment_open": "2025-11-12",
+            "enrollment_close": "2025-11-26"
+          },
+          {
+            "round_name": "Winter",
+            "round_number": 2,
+            "application_open": "2025-11-28",
+            "application_close": "2026-01-23",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": "2026-03-11",
+            "enrollment_open": "2026-03-11",
+            "enrollment_close": "2026-03-26"
+          },
+          {
+            "round_name": "Spring",
+            "round_number": 3,
+            "application_open": "2026-03-27",
+            "application_close": "2026-04-13",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": "2026-05-15",
+            "enrollment_open": "2026-05-15",
+            "enrollment_close": "2026-05-31"
+          }
+        ],
+        "note": "Percorso Law dedicato per Global Law e Giurisprudenza. Test ammessi: Bocconi online test – Law, SAT, ACT, LSAT."
+      },
+      "_all": {
+        "pathway_type": "application",
+        "test": "Bocconi online test / SAT / ACT",
+        "test_url": "https://www.unibocconi.it/it/programmi/lauree-triennali/ammissione",
+        "bando_url": "https://www.unibocconi.it/it/programmi/lauree-triennali/ammissione",
+        "rounds": [
+          {
+            "round_name": "Early",
+            "round_number": 1,
+            "application_open": "2025-09-03",
+            "application_close": "2025-09-26",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": "2025-11-12",
+            "enrollment_open": "2025-11-12",
+            "enrollment_close": "2025-11-26"
+          },
+          {
+            "round_name": "Winter",
+            "round_number": 2,
+            "application_open": "2025-11-28",
+            "application_close": "2026-01-23",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": "2026-03-11",
+            "enrollment_open": "2026-03-11",
+            "enrollment_close": "2026-03-26"
+          },
+          {
+            "round_name": "Spring",
+            "round_number": 3,
+            "application_open": "2026-03-27",
+            "application_close": "2026-04-13",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": "2026-05-15",
+            "enrollment_open": "2026-05-15",
+            "enrollment_close": "2026-05-31"
+          }
+        ],
+        "note": "Il test si sostiene in autonomia (disponibile luglio 2025 – aprile 2026) prima di inviare la domanda nel round scelto. Circa il 90-95% dei posti viene assegnato nei round Early e Winter."
+      }
+    }
+  },
+  "Università Cattolica del Sacro Cuore": {
+    "2026": {
+      "TOLC-E": {
+        "pathway_type": "internal_test",
+        "test": "TIEC (Test di Ingresso Economia Cattolica)",
+        "test_url": "https://www.unicatt.it/ammissione",
+        "bando_url": "https://www.unicatt.it/corsi/triennale",
+        "rounds": [
+          {
+            "round_name": "Sessione 1",
+            "round_number": 1,
+            "application_open": "2025-11-03",
+            "application_close": "2026-01-28",
+            "tolc_last_valid": null,
+            "test_date": "2026-02-07",
+            "results_date": "2026-02-16",
+            "enrollment_open": null,
+            "enrollment_close": null
+          },
+          {
+            "round_name": "Sessione 2",
+            "round_number": 2,
+            "application_open": "2026-02-25",
+            "application_close": "2026-03-31",
+            "tolc_last_valid": null,
+            "test_date": "2026-04-10",
+            "results_date": "2026-04-20",
+            "enrollment_open": null,
+            "enrollment_close": null
+          },
+          {
+            "round_name": "Sessione 3",
+            "round_number": 3,
+            "application_open": "2026-04-30",
+            "application_close": "2026-05-20",
+            "tolc_last_valid": null,
+            "test_date": "2026-05-28",
+            "results_date": "2026-06-08",
+            "enrollment_open": null,
+            "enrollment_close": null
+          },
+          {
+            "round_name": "Sessione 4",
+            "round_number": 4,
+            "application_open": "2026-06-23",
+            "application_close": "2026-07-07",
+            "tolc_last_valid": null,
+            "test_date": "2026-07-13",
+            "results_date": "2026-07-21",
+            "enrollment_open": null,
+            "enrollment_close": null
+          },
+          {
+            "round_name": "Sessione 5",
+            "round_number": 5,
+            "application_open": "2026-07-23",
+            "application_close": "2026-09-02",
+            "tolc_last_valid": null,
+            "test_date": "2026-09-08",
+            "results_date": "2026-09-15",
+            "enrollment_open": null,
+            "enrollment_close": null
+          },
+          {
+            "round_name": "Sessione 6",
+            "round_number": 6,
+            "application_open": "2026-09-09",
+            "application_close": "2026-09-17",
+            "tolc_last_valid": null,
+            "test_date": "2026-09-22",
+            "results_date": "2026-09-29",
+            "enrollment_open": null,
+            "enrollment_close": null
+          }
+        ],
+        "note": "Le sessioni dalla 2ª in poi si tengono solo se restano posti disponibili."
+      },
+      "L-10": {
+        "pathway_type": "free",
+        "test": "Accesso libero",
+        "test_url": null,
+        "bando_url": "https://www.unicatt.it/corsi/triennale",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2025-12-01",
+            "application_close": "2026-12-16",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": null,
+            "enrollment_open": null,
+            "enrollment_close": "2026-09-12"
+          }
+        ],
+        "note": null
+      },
+      "L-12": {
+        "pathway_type": "free",
+        "test": "Accesso libero",
+        "test_url": null,
+        "bando_url": "https://www.unicatt.it/corsi/triennale",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2025-12-01",
+            "application_close": "2026-12-16",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": null,
+            "enrollment_open": null,
+            "enrollment_close": "2026-09-12"
+          }
+        ],
+        "note": null
+      },
+      "L-5": {
+        "pathway_type": "free",
+        "test": "Accesso libero",
+        "test_url": null,
+        "bando_url": "https://www.unicatt.it/corsi/triennale",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2025-12-01",
+            "application_close": "2026-12-16",
+            "tolc_last_valid": null,
+            "test_date": null,
+            "results_date": null,
+            "enrollment_open": null,
+            "enrollment_close": "2026-09-12"
+          }
+        ],
+        "note": null
+      },
+      "_all": {
+        "pathway_type": "internal_test",
+        "test": "Prova di ammissione Cattolica",
+        "test_url": "https://www.unicatt.it/ammissione",
+        "bando_url": "https://www.unicatt.it/corsi/triennale",
+        "rounds": [
+          {
+            "round_name": "Sessione 1",
+            "round_number": 1,
+            "application_open": "2025-11-03",
+            "application_close": "2026-02-09",
+            "tolc_last_valid": null,
+            "test_date": "2026-02-16",
+            "results_date": "2026-02-25",
+            "enrollment_open": null,
+            "enrollment_close": "2026-03-02"
+          },
+          {
+            "round_name": "Sessione 2",
+            "round_number": 2,
+            "application_open": "2026-04-01",
+            "application_close": "2026-07-07",
+            "tolc_last_valid": null,
+            "test_date": "2026-07-15",
+            "results_date": "2026-07-24",
+            "enrollment_open": null,
+            "enrollment_close": "2026-07-29"
+          }
+        ],
+        "note": "Il processo varia per corso. Lettere, Scienze Linguistiche e Filosofia hanno accesso libero. Per Economia usa il TIEC. Verifica il bando specifico del tuo corso su unicatt.it."
+      }
+    }
+  },
+  "Libera Università di lingue e comunicazione IULM-MI": {
+    "2026": {
+      "_all": {
+        "pathway_type": "internal_test",
+        "test": "Test di ammissione IULM",
+        "test_url": "https://www.iulm.it/it/ammissione/test-di-ammissione-e-graduatorie",
+        "bando_url": "https://www.iulm.it/it/ammissione/nuovi-studenti",
+        "rounds": [
+          {
+            "round_name": "Sessione 1",
+            "round_number": 1,
+            "application_open": "2025-11-11",
+            "application_close": "2025-12-18",
+            "tolc_last_valid": null,
+            "test_date": "2026-01-13",
+            "results_date": "2026-01-30",
+            "enrollment_open": "2026-01-30",
+            "enrollment_close": "2026-03-02"
+          },
+          {
+            "round_name": "Sessione 2",
+            "round_number": 2,
+            "application_open": "2025-12-22",
+            "application_close": "2026-03-11",
+            "tolc_last_valid": null,
+            "test_date": "2026-03-16",
+            "results_date": "2026-04-02",
+            "enrollment_open": "2026-04-02",
+            "enrollment_close": "2026-05-13"
+          },
+          {
+            "round_name": "Sessione 3",
+            "round_number": 3,
+            "application_open": "2026-03-16",
+            "application_close": "2026-05-13",
+            "tolc_last_valid": null,
+            "test_date": "2026-05-18",
+            "results_date": "2026-06-05",
+            "enrollment_open": "2026-06-05",
+            "enrollment_close": "2026-07-02"
+          },
+          {
+            "round_name": "Sessione 4",
+            "round_number": 4,
+            "application_open": "2026-05-18",
+            "application_close": "2026-07-01",
+            "tolc_last_valid": null,
+            "test_date": "2026-07-10",
+            "results_date": "2026-07-22",
+            "enrollment_open": "2026-07-22",
+            "enrollment_close": "2026-08-27"
+          }
+        ],
+        "note": "La data esatta del test varia di qualche giorno tra corsi. Corporate Communication richiede anche un Oxford Placement Test propedeutico (livello B2 inglese)."
+      }
+    }
+  },
+  "UNISR - Università Vita Salute San Raffaele": {
+    "2026": {
+      "Nessuno": {
+        "pathway_type": "internal_test",
+        "test": "Test di ammissione UniSR",
+        "test_url": "https://www.unisr.it/it/ammissione",
+        "bando_url": "https://www.unisr.it/it/ammissione/medicina-e-chirurgia",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2026-02-04",
+            "application_close": "2026-04-01",
+            "tolc_last_valid": null,
+            "test_date": "2026-04-08",
+            "results_date": "2026-06-08",
+            "enrollment_open": "2026-07-01",
+            "enrollment_close": "2026-07-20"
+          }
+        ],
+        "note": "Processo comune a Medicina e Odontoiatria. Due sessioni di prova (8-9 apr e 27-28 apr); la graduatoria definitiva esce entro il 30 giugno."
+      },
+      "L-24": {
+        "pathway_type": "internal_test",
+        "test": "Test di ammissione UniSR",
+        "test_url": "https://www.unisr.it/it/ammissione",
+        "bando_url": "https://www.unisr.it/it/ammissione/scienze-e-tecniche-psicologiche",
+        "rounds": [
+          {
+            "round_name": "Sessione maggio",
+            "round_number": 1,
+            "application_open": "2026-04-21",
+            "application_close": "2026-05-15",
+            "tolc_last_valid": null,
+            "test_date": "2026-05-21",
+            "results_date": null,
+            "enrollment_open": null,
+            "enrollment_close": null
+          },
+          {
+            "round_name": "Sessione settembre",
+            "round_number": 2,
+            "application_open": "2026-04-21",
+            "application_close": "2026-08-28",
+            "tolc_last_valid": null,
+            "test_date": "2026-09-05",
+            "results_date": null,
+            "enrollment_open": null,
+            "enrollment_close": "2026-09-30"
+          }
+        ],
+        "note": "Ogni candidato può sostenere la prova una sola volta. Le immatricolazioni aprono a settembre 2026."
+      },
+      "_all": {
+        "pathway_type": "internal_test",
+        "test": "Test di ammissione UniSR",
+        "test_url": "https://www.unisr.it/it/ammissione",
+        "bando_url": "https://www.unisr.it/it/ammissione",
+        "rounds": [
+          {
+            "round_name": null,
+            "round_number": null,
+            "application_open": "2025-12-17",
+            "application_close": "2026-03-06",
+            "tolc_last_valid": null,
+            "test_date": "2026-03-14",
+            "results_date": null,
+            "enrollment_open": "2026-07-01",
+            "enrollment_close": "2026-07-20"
+          }
+        ],
+        "note": "Date di riferimento per Biotecnologie e Professioni Sanitarie (Infermieristica, Fisioterapia, Igiene Dentale, Ostetricia, Osteopatia, Radiologia). Per Medicina e Odontoiatria le date sono diverse."
+      }
+    }
   }
 }
