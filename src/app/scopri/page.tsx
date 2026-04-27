@@ -6,7 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { resolveUniversity, uniSlug } from '@/lib/data';
 import { buildDeck } from '@/lib/scoring';
 import { getTestLabel, getAdmissionInfo, isAdmissionClosed } from '@/lib/admissions';
-import { IconBuilding, IconExtLink, IconAlert, IconClipboard, IconCheck } from '@/components/Icons';
+import { IconBuilding, IconExtLink, IconAlert, IconClipboard, IconCheck, IconUndo, IconX, IconHeart, IconBookmark } from '@/components/Icons';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import Link from 'next/link';
 
@@ -169,7 +169,7 @@ export default function ScopriPage() {
             opacity: likeOpacity, transform: 'rotate(-8deg)',
             letterSpacing: '0.04em', zIndex: 3,
           }}>
-            {ts2.save} ❤️
+            {ts2.save}
           </div>
           <div style={{
             position: 'absolute', top: '1.5rem', right: '1.25rem',
@@ -178,7 +178,7 @@ export default function ScopriPage() {
             opacity: skipOpacity, transform: 'rotate(8deg)',
             letterSpacing: '0.04em', zIndex: 3,
           }}>
-            {ts2.skip} ✕
+            {ts2.skip}
           </div>
 
           {/* Counter */}
@@ -291,34 +291,42 @@ export default function ScopriPage() {
         <button onClick={doUndo} disabled={history.length === 0} style={{
           width: '52px', height: '52px', borderRadius: '50%',
           background: '#fff', border: `1.5px solid ${history.length === 0 ? '#E5E5E5' : '#BBB'}`,
-          fontSize: '20px', cursor: history.length === 0 ? 'default' : 'pointer',
+          cursor: history.length === 0 ? 'default' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
           color: history.length === 0 ? '#CCC' : '#555',
           transition: 'all 0.15s',
-        }}>↩</button>
+        }}>
+          <IconUndo size={22} strokeWidth={1.75} />
+        </button>
         <button onClick={() => doSwipe('left')} style={{
           width: '60px', height: '60px', borderRadius: '50%',
           background: '#fff', border: '1.5px solid #E5E5E5',
-          fontSize: '22px', cursor: 'pointer',
+          cursor: 'pointer', color: '#888',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        }}>✕</button>
+        }}>
+          <IconX size={24} strokeWidth={2} />
+        </button>
         <button onClick={() => doSwipe('right')} style={{
           width: '72px', height: '72px', borderRadius: '50%',
           background: 'var(--accent)', border: 'none',
-          fontSize: '28px', cursor: 'pointer',
+          cursor: 'pointer', color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 4px 20px rgba(27,94,82,0.35)',
-        }}>❤️</button>
+        }}>
+          <IconHeart size={28} strokeWidth={1.75} />
+        </button>
         <Link href="/preferiti">
           <button style={{
             width: '52px', height: '52px', borderRadius: '50%',
             background: '#fff', border: '1.5px solid #E5E5E5',
-            fontSize: '20px', cursor: 'pointer',
+            cursor: 'pointer', color: '#555',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          }}>🔖</button>
+          }}>
+            <IconBookmark size={22} strokeWidth={1.75} />
+          </button>
         </Link>
       </div>
     </div>

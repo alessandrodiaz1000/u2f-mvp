@@ -782,8 +782,8 @@ export default function DashboardPage() {
                           </div>
                           {isDone && !isScoreDone && (
                             <button onClick={() => handleUndo(si)} title="Annulla"
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DDD', padding: '0 0.125rem', flexShrink: 0, lineHeight: 1, marginTop: '1px', display: 'flex' }}>
-                              <IconUndo size={13} strokeWidth={1.75} />
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#AAA', padding: '0 0.125rem', flexShrink: 0, lineHeight: 1, marginTop: '1px', display: 'flex' }}>
+                              <IconUndo size={14} strokeWidth={2} />
                             </button>
                           )}
                         </div>
