@@ -6,6 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { resolveUniversity, uniSlug } from '@/lib/data';
 import { buildDeck } from '@/lib/scoring';
 import { getTestLabel, getAdmissionInfo, isAdmissionClosed } from '@/lib/admissions';
+import { IconBuilding, IconExtLink, IconAlert, IconClipboard, IconCheck } from '@/components/Icons';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import Link from 'next/link';
 
@@ -241,16 +242,20 @@ export default function ScopriPage() {
                   fontSize: '11px', fontWeight: 600, padding: '0.3rem 0.75rem', borderRadius: '20px',
                   background: testLabel === 'Nessuno' ? '#F5F5F5' : 'rgba(251,191,36,0.15)',
                   color: testLabel === 'Nessuno' ? '#888' : '#92400E',
+                  display: 'inline-flex', alignItems: 'center', gap: '4px',
                 }}>
-                  {testLabel === 'Nessuno' ? '✓ Accesso libero' : `📝 ${testLabel}`}
+                  {testLabel === 'Nessuno'
+                    ? <><IconCheck size={11} strokeWidth={2.5} /> Accesso libero</>
+                    : <><IconClipboard size={11} strokeWidth={1.75} /> {testLabel}</>}
                 </span>
               )}
               {admClosed && (
                 <span style={{
                   fontSize: '11px', fontWeight: 600, padding: '0.3rem 0.75rem', borderRadius: '20px',
                   background: '#FFF1F1', color: '#EF4444',
+                  display: 'inline-flex', alignItems: 'center', gap: '4px',
                 }}>
-                  ⚠️ Ammissioni chiuse
+                  <IconAlert size={12} strokeWidth={2} /> Ammissioni chiuse
                 </span>
               )}
             </div>
@@ -258,13 +263,13 @@ export default function ScopriPage() {
             {/* Links */}
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               {slug && (
-                <Link href={`/universita/${slug}`} style={{ fontSize: '12px', color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}>
-                  🏛 Vedi università
+                <Link href={`/universita/${slug}`} style={{ fontSize: '12px', color: 'var(--accent)', textDecoration: 'none', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <IconBuilding size={13} strokeWidth={1.75} /> Vedi università
                 </Link>
               )}
               {current.url && (
-                <a href={current.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#999', textDecoration: 'none', fontWeight: 500 }}>
-                  🔗 Sito ufficiale
+                <a href={current.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#999', textDecoration: 'none', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <IconExtLink size={13} strokeWidth={1.75} /> Sito ufficiale
                 </a>
               )}
             </div>

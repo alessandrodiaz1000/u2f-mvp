@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -13,6 +13,11 @@ import {
 } from '@/lib/admissions';
 import type { CourseAdmissionProgress } from '@/context/AuthContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import {
+  IconBookmark, IconCalendar, IconBuilding, IconHeart, IconSearch,
+  IconCompass, IconCheck, IconUndo, IconAlert, IconArrowRight,
+  IconUsers, IconClock, IconExtLink,
+} from '@/components/Icons';
 import { U2FLogo } from '@/components/U2FLogo';
 import type { Course } from '@/lib/data';
 import type { UserProfile } from '@/context/AuthContext';
@@ -99,16 +104,16 @@ function computeDirection(user: UserProfile): { area: string; pct: number }[] {
   return top.map(([area, score]) => ({ area, pct: Math.round((score / topSum) * 100) }));
 }
 
-function getNextStep(user: UserProfile): { icon: string; title: string; sub: string; href: string } {
+function getNextStep(user: UserProfile): { icon: React.ReactNode; title: string; sub: string; href: string } {
   if (user.swipedIds.length === 0)
-    return { icon: '❤️', title: 'Inizia a esplorare', sub: 'Scorri i corsi e salva quelli che ti interessano', href: '/scopri' };
+    return { icon: <IconHeart size={30} strokeWidth={1.5} />, title: 'Inizia a esplorare', sub: 'Scorri i corsi e salva quelli che ti interessano', href: '/scopri' };
   if (user.favorites.length < 2)
-    return { icon: '🔖', title: 'Salva altri corsi', sub: 'Ti servono almeno 2 corsi salvati per confrontarli', href: '/scopri' };
+    return { icon: <IconBookmark size={30} strokeWidth={1.5} />, title: 'Salva altri corsi', sub: 'Ti servono almeno 2 corsi salvati per confrontarli', href: '/scopri' };
   if ((user.comparisonsCount ?? 0) === 0)
-    return { icon: '⚖️', title: 'Confronta i tuoi corsi', sub: 'Metti fianco a fianco i corsi salvati e chiedilo all\'AI', href: '/preferiti' };
+    return { icon: <IconSearch size={30} strokeWidth={1.5} />, title: 'Confronta i tuoi corsi', sub: "Metti fianco a fianco i corsi salvati e chiedilo all'AI", href: '/preferiti' };
   if (Object.keys(user.scores ?? {}).length === 0)
-    return { icon: '🧭', title: 'Scopri chi sei', sub: 'Fai il test di orientamento per affinare il tuo profilo', href: '/orientamento' };
-  return { icon: '📅', title: 'Segna le scadenze', sub: 'Controlla le date di ammissione che ti interessano', href: '/esplora' };
+    return { icon: <IconCompass size={30} strokeWidth={1.5} />, title: 'Scopri chi sei', sub: 'Fai il test di orientamento per affinare il tuo profilo', href: '/orientamento' };
+  return { icon: <IconCalendar size={30} strokeWidth={1.5} />, title: 'Segna le scadenze', sub: 'Controlla le date di ammissione che ti interessano', href: '/esplora' };
 }
 
 // ── Admission roadmap from saved courses ─────────────────────────────
@@ -205,7 +210,7 @@ function computePercorso(user: UserProfile): PercorsoEntry[] {
 // ── Pentagon SVG ──────────────────────────────────────────────────────
 // Internal coords: cx=55 cy=55, pentagon r=36, labels at r=50
 // viewBox="-10 -10 130 130" gives room for labels on all sides
-const PENTAGON_LABELS    = ['📍', '💰', '🎯', '🧠', '🚪'];
+const PENTAGON_LABELS    = ['Geo', 'Costo', 'Match', 'Att.', 'Acc.'];
 const PENTAGON_ANCHORS   = ['middle', 'start', 'start', 'end', 'end'] as const;
 const PENTAGON_BASELINES = ['auto', 'middle', 'hanging', 'hanging', 'middle'] as const;
 
@@ -252,8 +257,11 @@ function PentagonChart({ scores }: { scores: [number, number, number, number, nu
           x={p[0]} y={p[1]}
           textAnchor={PENTAGON_ANCHORS[i]}
           dominantBaseline={PENTAGON_BASELINES[i]}
-          fontSize="12"
-          fontFamily="system-ui, sans-serif"
+          fontSize="8"
+          fontWeight="600"
+          fontFamily="Inter, system-ui, sans-serif"
+          fill="#888"
+          letterSpacing="0.02em"
         >
           {PENTAGON_LABELS[i]}
         </text>
@@ -349,9 +357,9 @@ export default function DashboardPage() {
                 width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
                 background: nextAdmissionUrgent ? '#FFF1F1' : '#F0FDF4',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '18px',
+                color: nextAdmissionUrgent ? '#EF4444' : '#1B5E52',
               }}>
-                📅
+                <IconCalendar size={18} strokeWidth={1.75} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: '9px', color: '#BBB', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1px' }}>
@@ -445,7 +453,7 @@ export default function DashboardPage() {
           border: '1.5px dashed #E5E5E5', padding: '2rem',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔖</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', color: '#DDD' }}><IconBookmark size={36} strokeWidth={1.25} /></div>
           <p style={{ fontSize: '13px', color: '#AAA', marginBottom: '1rem' }}>Nessun corso salvato ancora.</p>
           <Link href="/scopri">
             <button style={{
@@ -510,7 +518,8 @@ export default function DashboardPage() {
                     whiteSpace: 'nowrap', overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}>
-                    🏛 {mur?.short_name?.slice(0, 18) ?? c.universita.slice(0, 18)}
+                    <IconBuilding size={10} style={{ marginRight: '3px', verticalAlign: 'middle' }} />
+                    {mur?.short_name?.slice(0, 18) ?? c.universita.slice(0, 18)}
                   </Link>
                 )}
               </div>
@@ -530,7 +539,7 @@ export default function DashboardPage() {
           display: 'flex', alignItems: 'center', gap: '1rem',
           boxShadow: '0 4px 20px rgba(27,94,82,0.25)',
         }}>
-          <div style={{ fontSize: '1.875rem', flexShrink: 0 }}>{nextStep.icon}</div>
+          <div style={{ flexShrink: 0, color: 'rgba(255,255,255,0.9)' }}>{nextStep.icon}</div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '2px' }}>
               PROSSIMO STEP
@@ -551,17 +560,17 @@ export default function DashboardPage() {
   const sectionQuickActions = (
     <section style={{ padding: '0.875rem 1.25rem 0', display: 'flex', gap: '0.625rem' }}>
       {[
-        { href: '/scopri',       icon: '❤️', label: 'Scopri' },
-        { href: '/esplora',      icon: '🔍', label: 'Esplora' },
-        { href: '/orientamento', icon: '🧭', label: 'Test' },
+        { href: '/scopri',       icon: <IconHeart size={22} />,   label: 'Scopri' },
+        { href: '/esplora',      icon: <IconSearch size={22} />,  label: 'Esplora' },
+        { href: '/orientamento', icon: <IconCompass size={22} />, label: 'Test' },
       ].map(({ href, icon, label }) => (
         <Link key={href} href={href} style={{ flex: 1, textDecoration: 'none' }}>
           <div style={{
             background: '#fff', borderRadius: '14px',
             border: '1px solid #EBEBEB', padding: '1rem',
-            textAlign: 'center',
+            textAlign: 'center', color: '#1B5E52',
           }}>
-            <div style={{ fontSize: '1.375rem', marginBottom: '0.25rem' }}>{icon}</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.375rem' }}>{icon}</div>
             <div style={{ fontSize: '12px', fontWeight: 600, color: '#111' }}>{label}</div>
           </div>
         </Link>
@@ -682,7 +691,8 @@ export default function DashboardPage() {
                             background: '#F0FDF4', color: '#1B5E52',
                             border: '1.5px solid #A7F3D0', cursor: 'pointer', textAlign: 'left',
                           }}>
-                          🗓 Sono disposto a iniziare nel {nextYear}/{String(parseInt(nextYear) + 1).slice(2)}
+                          <IconCalendar size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                          Sono disposto a iniziare nel {nextYear}/{String(parseInt(nextYear) + 1).slice(2)}
                         </button>
                       )}
                       <button
@@ -695,7 +705,8 @@ export default function DashboardPage() {
                           background: '#F5F5F5', color: '#555',
                           border: '1.5px solid #E5E5E5', cursor: 'pointer', textAlign: 'left',
                         }}>
-                        🔍 Cerca alternative per il {entry.sourceYear}/{String(parseInt(entry.sourceYear) + 1).slice(2)}
+                          <IconSearch size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                          Cerca alternative per il {entry.sourceYear}/{String(parseInt(entry.sourceYear) + 1).slice(2)}
                       </button>
                     </div>
                   </div>
@@ -721,7 +732,7 @@ export default function DashboardPage() {
                       background: entry.done ? '#E4F0ED' : '#F5F5F5',
                       color: entry.done ? '#1B5E52' : '#888',
                     }}>
-                      {entry.done ? '✓ Completato' : `step ${entry.stepIndex + 1}/${entry.totalSteps}`}
+                      {entry.done ? <><IconCheck size={10} strokeWidth={2.5} /> Completato</> : `step ${entry.stepIndex + 1}/${entry.totalSteps}`}
                     </span>
                   </div>
 
@@ -744,7 +755,7 @@ export default function DashboardPage() {
                             color: isDone ? '#fff' : isCurrent ? (stepUrgent ? '#EF4444' : '#1B5E52') : '#CCC',
                             border: isCurrent ? `1.5px solid ${stepUrgent ? '#EF4444' : '#1B5E52'}` : 'none',
                           }}>
-                            {isDone ? '✓' : si + 1}
+                            {isDone ? <IconCheck size={10} strokeWidth={2.5} /> : si + 1}
                           </div>
                           <div style={{ flex: 1 }}>
                             <span style={{
@@ -771,8 +782,8 @@ export default function DashboardPage() {
                           </div>
                           {isDone && !isScoreDone && (
                             <button onClick={() => handleUndo(si)} title="Annulla"
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#DDD', padding: '0 0.125rem', flexShrink: 0, lineHeight: 1, marginTop: '2px' }}>
-                              ↩
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DDD', padding: '0 0.125rem', flexShrink: 0, lineHeight: 1, marginTop: '1px', display: 'flex' }}>
+                              <IconUndo size={13} strokeWidth={1.75} />
                             </button>
                           )}
                         </div>
@@ -833,7 +844,8 @@ export default function DashboardPage() {
                             border: `1.5px solid ${urgent ? '#FCA5A5' : '#A7F3D0'}`,
                             cursor: 'pointer', textAlign: 'center',
                           }}>
-                          ✓ Ho completato: {entry.currentStep.label_it}
+                          <IconCheck size={13} strokeWidth={2.2} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
+                          Ho completato: {entry.currentStep.label_it}
                         </button>
                       )}
                     </div>

@@ -8,6 +8,7 @@ import {
   getUniAdmissionEntries, formatDeadline, daysUntil,
   getActiveRound, PATHWAY_STEPS,
 } from '@/lib/admissions';
+import { IconClipboard, IconCheck, IconBuilding } from '@/components/Icons';
 const TIPO_STYLE: Record<string, { text: string; bg: string; border: string }> = {
   Triennale:     { text: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
   Magistrale:    { text: '#065F46', bg: '#ECFDF5', border: '#A7F3D0' },
@@ -161,8 +162,11 @@ export default function UniversityPage({ params }: { params: { id: string } }) {
                       color: isFree ? '#555' : '#92400E',
                       background: isFree ? '#F5F5F5' : 'rgba(251,191,36,0.15)',
                       padding: '0.25rem 0.625rem', borderRadius: '6px',
+                      display: 'inline-flex', alignItems: 'center', gap: '5px',
                     }}>
-                      {isFree ? '✓ Accesso libero' : `📝 ${testType}`}
+                      {isFree
+                        ? <><IconCheck size={12} strokeWidth={2.5} /> Accesso libero</>
+                        : <><IconClipboard size={12} strokeWidth={1.75} /> {testType}</>}
                     </span>
                     {primaryDeadline && (
                       <span style={{ fontSize: '11px', fontWeight: 600, color: isUrgentDeadline ? '#B45309' : 'var(--text-3)' }}>

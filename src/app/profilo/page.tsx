@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { IconBuilding, IconGlobe, IconBarChart, IconGradCap } from '@/components/Icons';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -46,7 +47,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const PROFILE_FIELDS = [
   {
     key: 'uniPreference' as const,
-    icon: '🏛',
+    icon: <IconBuilding size={18} strokeWidth={1.5} />,
     label: 'Preferenza università',
     options: [
       { value: 'pubblica',     label: 'Pubblica',     sub: 'Polimi, Statale, Bicocca…' },
@@ -56,7 +57,7 @@ const PROFILE_FIELDS = [
   },
   {
     key: 'langPreference' as const,
-    icon: '🌐',
+    icon: <IconGlobe size={18} strokeWidth={1.5} />,
     label: 'Lingua dei corsi',
     options: [
       { value: 'italiano',     label: 'Italiano',     sub: 'Preferisco corsi in italiano' },
@@ -66,7 +67,7 @@ const PROFILE_FIELDS = [
   },
   {
     key: 'gradeAvg' as const,
-    icon: '📊',
+    icon: <IconBarChart size={18} strokeWidth={1.5} />,
     label: 'Media 3ª–4ª liceo',
     options: [
       { value: 'lt7',   label: '< 7',   sub: 'Approssimativa' },
@@ -77,7 +78,7 @@ const PROFILE_FIELDS = [
   },
   {
     key: 'startYear' as const,
-    icon: '🎓',
+    icon: <IconGradCap size={18} strokeWidth={1.5} />,
     label: 'Anno di inizio università',
     options: [
       { value: '2025', label: '2025/26', sub: 'Inizierai o hai iniziato quest\'anno' },
@@ -246,7 +247,7 @@ export default function ProfiloPage() {
                       background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                     }}
                   >
-                    <span style={{ fontSize: '1.125rem', flexShrink: 0 }}>{field.icon}</span>
+                    <span style={{ flexShrink: 0, color: 'var(--text-3)', display: 'flex' }}>{field.icon}</span>
                     <span style={{ flex: 1, fontSize: '13px', fontWeight: 500, color: 'var(--text-1)' }}>{field.label}</span>
                     {displayLabel ? (
                       <span style={{
