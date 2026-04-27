@@ -15,7 +15,7 @@ import type { CourseAdmissionProgress } from '@/context/AuthContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import {
   IconBookmark, IconCalendar, IconBuilding, IconHeart, IconSearch,
-  IconCompass, IconCheck, IconUndo, IconAlert, IconArrowRight,
+  IconCompass, IconCheck, IconX, IconAlert, IconArrowRight,
   IconUsers, IconClock, IconExtLink,
 } from '@/components/Icons';
 import { U2FLogo } from '@/components/U2FLogo';
@@ -781,9 +781,9 @@ export default function DashboardPage() {
                             )}
                           </div>
                           {isDone && !isScoreDone && (
-                            <button onClick={() => handleUndo(si)} title="Annulla"
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#AAA', padding: '0 0.125rem', flexShrink: 0, lineHeight: 1, marginTop: '1px', display: 'flex' }}>
-                              <IconUndo size={14} strokeWidth={2} />
+                            <button onClick={() => handleUndo(si)} title="Annulla step"
+                              style={{ background: 'none', border: '1px solid #E0E0E0', borderRadius: '4px', cursor: 'pointer', color: '#AAA', padding: '1px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                              <IconX size={11} strokeWidth={2.5} />
                             </button>
                           )}
                         </div>

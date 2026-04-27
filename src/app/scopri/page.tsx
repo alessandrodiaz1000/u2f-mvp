@@ -164,7 +164,7 @@ export default function ScopriPage() {
           {/* SALVA / SALTA overlays */}
           <div style={{
             position: 'absolute', top: '1.5rem', left: '1.25rem',
-            background: '#22c55e', color: '#fff', borderRadius: '8px',
+            background: '#1B5E52', color: '#fff', borderRadius: '8px',
             padding: '0.3rem 0.875rem', fontSize: '14px', fontWeight: 800,
             opacity: likeOpacity, transform: 'rotate(-8deg)',
             letterSpacing: '0.04em', zIndex: 3,
@@ -173,7 +173,7 @@ export default function ScopriPage() {
           </div>
           <div style={{
             position: 'absolute', top: '1.5rem', right: '1.25rem',
-            background: '#ef4444', color: '#fff', borderRadius: '8px',
+            background: '#5C5C5C', color: '#fff', borderRadius: '8px',
             padding: '0.3rem 0.875rem', fontSize: '14px', fontWeight: 800,
             opacity: skipOpacity, transform: 'rotate(8deg)',
             letterSpacing: '0.04em', zIndex: 3,
