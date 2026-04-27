@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { resolveUniversity, uniSlug } from '@/lib/data';
 import { buildDeck } from '@/lib/scoring';
-import { getTestLabel } from '@/lib/admissions';
+import { getTestLabel, getAdmissionInfo, isAdmissionClosed } from '@/lib/admissions';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import Link from 'next/link';
 
@@ -120,6 +120,9 @@ export default function ScopriPage() {
   const ts        = TIPO_STYLE[current.tipo] ?? TIPO_STYLE.Triennale;
   const photo     = UNI_PHOTOS[current.universita] ?? (mur ? (UNI_PHOTOS[mur.name] ?? FALLBACK_PHOTO) : FALLBACK_PHOTO);
   const testLabel = getTestLabel(current.universita, current.classe ?? '');
+  const targetYear = user.startYear || String(new Date().getFullYear());
+  const admInfo = getAdmissionInfo(current.universita, current.classe ?? '', targetYear);
+  const admClosed = admInfo ? isAdmissionClosed(admInfo) : false;
 
   return (
     <div style={{ background: '#F7F7F7', height: '100svh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -233,13 +236,21 @@ export default function ScopriPage() {
                   {current.lingua}
                 </span>
               )}
-              {testLabel && (
+              {testLabel && !admClosed && (
                 <span style={{
                   fontSize: '11px', fontWeight: 600, padding: '0.3rem 0.75rem', borderRadius: '20px',
                   background: testLabel === 'Nessuno' ? '#F5F5F5' : 'rgba(251,191,36,0.15)',
                   color: testLabel === 'Nessuno' ? '#888' : '#92400E',
                 }}>
                   {testLabel === 'Nessuno' ? '✓ Accesso libero' : `📝 ${testLabel}`}
+                </span>
+              )}
+              {admClosed && (
+                <span style={{
+                  fontSize: '11px', fontWeight: 600, padding: '0.3rem 0.75rem', borderRadius: '20px',
+                  background: '#FFF1F1', color: '#EF4444',
+                }}>
+                  ⚠️ Ammissioni chiuse
                 </span>
               )}
             </div>

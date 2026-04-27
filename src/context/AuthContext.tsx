@@ -31,13 +31,14 @@ export interface UserProfile {
   gradeAvg: 'lt7' | '7to8' | '8to9' | '9to10' | '';
   startYear: '2025' | '2026' | '2027' | '2028' | '';
   admissionTracking: CourseAdmissionProgress[];
+  admissionClosedActions: Record<string, 'delay' | 'alternatives'>;
 }
 
 interface AuthCtx {
   user: UserProfile | null;
   login: (email: string, name: string) => void;
   logout: () => void;
-  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg' | 'startYear' | 'admissionTracking'>) => void;
+  completeOnboarding: (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg' | 'startYear' | 'admissionTracking' | 'admissionClosedActions'>) => void;
   swipeRight: (id: number) => void;
   swipeLeft: (id: number) => void;
   addFavorite: (id: number) => void;
@@ -48,6 +49,7 @@ interface AuthCtx {
   trackComparison: () => void;
   updateProfile: (data: Partial<UserProfile>) => void;
   updateAdmissionProgress: (courseId: number, update: Partial<CourseAdmissionProgress>) => void;
+  setAdmissionClosedAction: (universita: string, action: 'delay' | 'alternatives') => void;
 }
 
 const AuthContext = createContext<AuthCtx>({
@@ -65,6 +67,7 @@ const AuthContext = createContext<AuthCtx>({
   trackComparison: () => {},
   updateProfile: () => {},
   updateAdmissionProgress: () => {},
+  setAdmissionClosedAction: () => {},
 });
 
 const STORAGE_KEY = 'u2f_user';
@@ -94,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!parsed.gradeAvg)       parsed.gradeAvg       = '';
         if (!parsed.startYear)      parsed.startYear      = '';
         if (!Array.isArray(parsed.admissionTracking)) parsed.admissionTracking = [];
+        if (typeof parsed.admissionClosedActions !== 'object' || Array.isArray(parsed.admissionClosedActions)) parsed.admissionClosedActions = {};
         setUser(parsed);
       }
     } catch {}
@@ -115,12 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       onboarded: false, favorites: [], swipedIds: [], comparisonsCount: 0, scores: {},
       uniPreference: '', langPreference: '', gradeAvg: '', startYear: '',
       admissionTracking: [],
+      admissionClosedActions: {},
     });
   };
 
   const logout = () => persist(null);
 
-  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg' | 'startYear' | 'admissionTracking'>) => {
+  const completeOnboarding = (data: Omit<UserProfile, 'id' | 'email' | 'name' | 'onboarded' | 'favorites' | 'swipedIds' | 'scores' | 'comparisonsCount' | 'uniPreference' | 'langPreference' | 'gradeAvg' | 'startYear' | 'admissionTracking' | 'admissionClosedActions'>) => {
     if (!user) return;
     persist({ ...user, ...data, onboarded: true });
   };
@@ -175,6 +180,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist({ ...user, ...data });
   };
 
+  const setAdmissionClosedAction = (universita: string, action: 'delay' | 'alternatives') => {
+    if (!user) return;
+    persist({ ...user, admissionClosedActions: { ...(user.admissionClosedActions ?? {}), [universita]: action } });
+  };
+
   const updateAdmissionProgress = (courseId: number, update: Partial<CourseAdmissionProgress>) => {
     if (!user) return;
     const existing = user.admissionTracking ?? [];
@@ -195,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores, undoSwipe, trackComparison, updateProfile, updateAdmissionProgress }}>
+    <AuthContext.Provider value={{ user, login, logout, completeOnboarding, swipeRight, swipeLeft, addFavorite, removeFavorite, markSwiped, updateScores, undoSwipe, trackComparison, updateProfile, updateAdmissionProgress, setAdmissionClosedAction }}>
       {children}
     </AuthContext.Provider>
   );

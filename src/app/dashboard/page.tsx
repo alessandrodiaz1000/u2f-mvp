@@ -8,7 +8,7 @@ import { MILAN_COURSES, resolveUniversity, uniSlug } from '@/lib/data';
 import { scoreCourse } from '@/lib/scoring';
 import {
   getAdmissionInfo, formatDeadline, daysUntil,
-  getActiveRound, getActiveStep, getStepDeadline, isAllDone, PATHWAY_STEPS,
+  getActiveRound, getActiveStep, getStepDeadline, isAllDone, isAdmissionClosed, PATHWAY_STEPS,
   type PathwayType, type StepDef,
 } from '@/lib/admissions';
 import type { CourseAdmissionProgress } from '@/context/AuthContext';
@@ -116,6 +116,7 @@ function getNextStep(user: UserProfile): { icon: string; title: string; sub: str
 interface PercorsoEntry {
   course_id: number;
   courseName: string;
+  universita: string;
   uniShort: string;
   pathway_type: PathwayType;
   test: string;
@@ -127,6 +128,8 @@ interface PercorsoEntry {
   allSteps: StepDef[];
   completedSteps: string[];
   done: boolean;
+  closed: boolean;
+  closedAction: 'delay' | 'alternatives' | null;
   estimated: boolean;
   sourceYear: string;
   testScore: number | null;
@@ -158,11 +161,18 @@ function computePercorso(user: UserProfile): PercorsoEntry[] {
     const stepDeadline = currentStep && round ? getStepDeadline(currentStep, round) : null;
     const stepIndex = currentStep ? steps.findIndex(s => s.id === currentStep.id) : steps.length;
     const done = isAllDone(info.pathway_type, completedSteps);
+    const closed = isAdmissionClosed(info);
+    const closedAction = (user.admissionClosedActions ?? {})[c.universita] ?? null;
+
+    // If user chose "seek alternatives", skip this uni entirely
+    if (closedAction === 'alternatives') continue;
+
     const mur = resolveUniversity(c.universita);
 
     result.push({
       course_id: c.id,
       courseName: c.nome,
+      universita: c.universita,
       uniShort: mur?.short_name ?? c.universita.split(' ').slice(0, 3).join(' '),
       pathway_type: info.pathway_type,
       test: info.test,
@@ -174,6 +184,8 @@ function computePercorso(user: UserProfile): PercorsoEntry[] {
       allSteps: steps,
       completedSteps,
       done,
+      closed,
+      closedAction,
       estimated: info.estimated ?? false,
       sourceYear: info.sourceYear ?? targetYear,
       testScore: progress.test_score,
@@ -278,7 +290,7 @@ function ClarityRing({ score }: { score: number }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { user, updateAdmissionProgress } = useAuth();
+  const { user, updateAdmissionProgress, updateProfile, setAdmissionClosedAction } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
   const [openCourseId, setOpenCourseId] = useState<number | null>(null);
@@ -629,6 +641,67 @@ export default function DashboardPage() {
               if (entry.testType && entry.pathway_type === 'application') setTestTypeInput(entry.testType);
               setOpenCourseId(entry.course_id);
             };
+
+            // ── Closed card ─────────────────────────────────────────────────
+            if (entry.closed) {
+              const nextYear = entry.sourceYear && entry.sourceYear !== '2028'
+                ? String(parseInt(entry.sourceYear) + 1)
+                : null;
+              return (
+                <div key={entry.course_id} style={{ borderBottom: i < percorso.length - 1 ? '1px solid #F5F5F5' : 'none' }}>
+                  <div style={{ padding: '0.875rem 1.25rem 0.875rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                      <div style={{ flex: 1, minWidth: 0, marginRight: '0.5rem' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#999', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {entry.uniShort}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#CCC', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {entry.courseName}
+                        </div>
+                      </div>
+                      <span style={{
+                        fontSize: '10px', fontWeight: 600, flexShrink: 0,
+                        padding: '0.15rem 0.5rem', borderRadius: '20px',
+                        background: '#FFF1F1', color: '#EF4444',
+                      }}>
+                        Chiuso
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.5, marginBottom: '0.875rem' }}>
+                      Le ammissioni {entry.sourceYear}/{String(parseInt(entry.sourceYear) + 1).slice(2)} sono chiuse. Cosa vuoi fare?
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {nextYear && (
+                        <button
+                          onClick={() => {
+                            updateProfile({ startYear: nextYear as '2025' | '2026' | '2027' | '2028' });
+                            setAdmissionClosedAction(entry.universita, 'delay');
+                          }}
+                          style={{
+                            padding: '0.625rem 1rem', borderRadius: '10px', fontSize: '12px', fontWeight: 600,
+                            background: '#F0FDF4', color: '#1B5E52',
+                            border: '1.5px solid #A7F3D0', cursor: 'pointer', textAlign: 'left',
+                          }}>
+                          🗓 Sono disposto a iniziare nel {nextYear}/{String(parseInt(nextYear) + 1).slice(2)}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setAdmissionClosedAction(entry.universita, 'alternatives');
+                          router.push('/scopri');
+                        }}
+                        style={{
+                          padding: '0.625rem 1rem', borderRadius: '10px', fontSize: '12px', fontWeight: 600,
+                          background: '#F5F5F5', color: '#555',
+                          border: '1.5px solid #E5E5E5', cursor: 'pointer', textAlign: 'left',
+                        }}>
+                        🔍 Cerca alternative per il {entry.sourceYear}/{String(parseInt(entry.sourceYear) + 1).slice(2)}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <div key={entry.course_id} style={{ borderBottom: i < percorso.length - 1 ? '1px solid #F5F5F5' : 'none' }}>

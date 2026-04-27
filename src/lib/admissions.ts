@@ -279,6 +279,16 @@ export function getPrimaryDeadline(info: AdmissionInfo): string | null {
   return getActiveRound(info)?.application_close ?? null;
 }
 
+/** True when every round's application_close is in the past. Estimated-year data is never considered closed. */
+export function isAdmissionClosed(info: AdmissionInfo): boolean {
+  if (info.estimated) return false;
+  const rounds = info.rounds ?? [];
+  const withDeadline = rounds.filter(r => r.application_close);
+  if (withDeadline.length === 0) return false;
+  const now = Date.now();
+  return withDeadline.every(r => new Date(r.application_close!).getTime() < now);
+}
+
 // ── Step helpers ─────────────────────────────────────────────────────
 
 /** Returns the first unlocked, not-yet-done step. null = all steps completed. */
