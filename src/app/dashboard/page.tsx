@@ -91,12 +91,12 @@ function computeDirection(user: UserProfile): { area: string; pct: number }[] {
       totals[area] = (totals[area] ?? 0) + score;
     }
   }
-  const max = Math.max(...Object.values(totals), 1);
-  return Object.entries(totals)
+  const top = Object.entries(totals)
     .filter(([, v]) => v > 0)
-    .map(([area, score]) => ({ area, pct: Math.round((score / max) * 100) }))
-    .sort((a, b) => b.pct - a.pct)
+    .sort(([, a], [, b]) => b - a)
     .slice(0, 4);
+  const topSum = top.reduce((acc, [, v]) => acc + v, 0) || 1;
+  return top.map(([area, score]) => ({ area, pct: Math.round((score / topSum) * 100) }));
 }
 
 function getNextStep(user: UserProfile): { icon: string; title: string; sub: string; href: string } {
