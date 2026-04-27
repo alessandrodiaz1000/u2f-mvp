@@ -70,15 +70,15 @@ export default function UniversityPage({ params }: { params: { id: string } }) {
         <button
           onClick={() => router.back()}
           style={{
-            display: 'flex', alignItems: 'center', gap: '0.375rem',
-            fontSize: '13px', color: 'var(--accent)', fontWeight: 600,
-            background: 'var(--accent-bg)', border: 'none',
-            padding: '0.4rem 0.75rem', borderRadius: '8px',
+            display: 'flex', alignItems: 'center', gap: '0.25rem',
+            fontSize: '14px', color: 'var(--accent)', fontWeight: 700,
+            background: 'var(--surface)', border: '1.5px solid var(--accent)',
+            padding: '0.375rem 0.875rem 0.375rem 0.625rem', borderRadius: '20px',
             cursor: 'pointer', flexShrink: 0,
           }}
         >
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           Indietro
         </button>
