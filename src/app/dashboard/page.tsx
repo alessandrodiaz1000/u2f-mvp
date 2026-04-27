@@ -884,7 +884,7 @@ export default function DashboardPage() {
 
       {urgencyMode ? (
         <>
-          <PercorsoSection />
+          {PercorsoSection()}
           {sectionCorsi}
           {sectionDirezione}
           {sectionQuickActions}
@@ -894,7 +894,7 @@ export default function DashboardPage() {
           {sectionDirezione}
           {sectionCorsi}
           {sectionProssimoStep}
-          <PercorsoSection />
+          {PercorsoSection()}
           {sectionQuickActions}
         </>
       )}
