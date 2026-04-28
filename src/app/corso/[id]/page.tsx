@@ -413,7 +413,10 @@ export default function CorsoPage() {
         {/* OVERVIEW */}
         <Section label="Overview" title="Università e dipartimento">
           <div style={{ background: '#F5F1E8', borderRadius: '12px', padding: '1.25rem 1.5rem', border: '1px solid #E4DDD0' }}>
-            <div style={{ fontSize: '11px', color: '#B0A898', fontStyle: 'italic', marginBottom: '0.875rem' }}>Disponibile prossimamente</div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <HourglassIcon />
+              <span style={{ fontSize: '11px', color: '#B0A898', fontStyle: 'italic' }}>Disponibile prossimamente</span>
+            </div>
             <ul style={{ margin: 0, padding: '0 0 0 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <li style={{ fontSize: '13px', color: '#8A9D95' }}>Ranking e riconoscimenti internazionali</li>
               <li style={{ fontSize: '13px', color: '#8A9D95' }}>Professori e corsi caratterizzanti</li>
@@ -425,7 +428,10 @@ export default function CorsoPage() {
         {/* POSIZIONE */}
         <Section label="Posizione" title="Dove si studia">
           <div style={{ background: '#F5F1E8', borderRadius: '12px', padding: '1.25rem 1.5rem', border: '1px solid #E4DDD0' }}>
-            <div style={{ fontSize: '11px', color: '#B0A898', fontStyle: 'italic', marginBottom: '0.875rem' }}>Disponibile prossimamente</div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <HourglassIcon />
+              <span style={{ fontSize: '11px', color: '#B0A898', fontStyle: 'italic' }}>Disponibile prossimamente</span>
+            </div>
             <ul style={{ margin: 0, padding: '0 0 0 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <li style={{ fontSize: '13px', color: '#8A9D95' }}>Tratta da pendolare dalla tua città</li>
               <li style={{ fontSize: '13px', color: '#8A9D95' }}>Affitti e situazione immobiliare nella zona</li>

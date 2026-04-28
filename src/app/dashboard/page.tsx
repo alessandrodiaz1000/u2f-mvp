@@ -16,7 +16,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import {
   IconBookmark, IconCalendar, IconBuilding, IconHeart, IconSearch,
   IconCompass, IconCheck, IconX, IconAlert, IconArrowRight,
-  IconUsers, IconClock, IconExtLink,
+  IconUsers, IconClock, IconExtLink, IconChevDown,
 } from '@/components/Icons';
 import { U2FLogo } from '@/components/U2FLogo';
 import type { Course } from '@/lib/data';
@@ -304,6 +304,12 @@ export default function DashboardPage() {
   const [openCourseId, setOpenCourseId] = useState<number | null>(null);
   const [scoreInput, setScoreInput] = useState('');
   const [testTypeInput, setTestTypeInput] = useState('BAT');
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const toggleExpand = (id: number) => setExpandedIds(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
 
   if (!user) { router.replace("/"); return null; }
   if (!user.onboarded) { router.replace("/onboarding"); return null; }
@@ -481,13 +487,14 @@ export default function DashboardPage() {
             const slug     = mur ? uniSlug(mur.name) : null;
 
             return (
-              <div key={c.id} style={{
+              <div key={c.id} onClick={() => router.push(`/corso/${c.id}`)} style={{
                 flexShrink: 0, width: '175px',
                 background: '#fff', borderRadius: '16px',
                 border: '1px solid #EBEBEB',
                 padding: '0.875rem',
                 display: 'flex', flexDirection: 'column', gap: '0.5rem',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                cursor: 'pointer',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{
@@ -513,7 +520,7 @@ export default function DashboardPage() {
                   <PentagonChart scores={scores} />
                 </div>
                 {slug && (
-                  <Link href={`/universita/${slug}`} style={{
+                  <Link href={`/universita/${slug}`} onClick={e => e.stopPropagation()} style={{
                     fontSize: '10px', color: 'var(--accent)',
                     textDecoration: 'none', fontWeight: 500,
                     whiteSpace: 'nowrap', overflow: 'hidden',
@@ -579,7 +586,12 @@ export default function DashboardPage() {
     </section>
   );
 
-  const PercorsoSection = () => (
+  const PercorsoSection = () => {
+    const deadlines = percorso
+      .filter(e => !e.done && !e.closed && e.stepDeadline && (daysUntil(e.stepDeadline) ?? -1) >= 0)
+      .sort((a, b) => (a.stepDeadline ?? '9999').localeCompare(b.stepDeadline ?? '9999'));
+
+    return (
     <section style={{ padding: '0.875rem 1.25rem 0' }}>
       <div style={{
         background: '#fff', borderRadius: '20px', border: '1px solid #EBEBEB',
@@ -596,6 +608,42 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* ── SCADENZE ── */}
+        {deadlines.length > 0 && (
+          <>
+            <div style={{ padding: '0.5rem 1.25rem 0.375rem', background: '#FAFAFA', borderBottom: '1px solid #F5F5F5' }}>
+              <span style={{ fontSize: '9px', fontWeight: 700, color: '#AAA', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Scadenze</span>
+            </div>
+            {deadlines.map(entry => {
+              const ddDays = daysUntil(entry.stepDeadline);
+              const ddUrgent = ddDays !== null && ddDays <= 30;
+              return (
+                <div key={`dl-${entry.course_id}`} style={{ padding: '0.625rem 1.25rem', borderBottom: '1px solid #F5F5F5', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '42px', height: '42px', borderRadius: '50%', flexShrink: 0, background: ddUrgent ? '#FFF1F1' : '#F0FDF4', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: ddUrgent ? '#EF4444' : '#1B5E52', lineHeight: 1 }}>{ddDays}</span>
+                    <span style={{ fontSize: '7px', color: ddUrgent ? '#EF4444' : '#1B5E52', fontWeight: 500 }}>gg</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#222', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.uniShort}</div>
+                    <div style={{ fontSize: '10px', color: '#888', marginTop: '1px' }}>{entry.test} · {entry.currentStep?.label_it}</div>
+                    <div style={{ fontSize: '10px', color: ddUrgent ? '#EF4444' : '#999', fontWeight: 600, marginTop: '1px' }}>
+                      {entry.estimated ? '~' : ''}entro {formatDeadline(entry.stepDeadline)}
+                    </div>
+                  </div>
+                  {entry.bando_url && (
+                    <a href={entry.bando_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '10px', color: '#1B5E52', fontWeight: 500, textDecoration: 'none', flexShrink: 0 }}>
+                      Bando →
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+            <div style={{ padding: '0.5rem 1.25rem 0.375rem', background: '#FAFAFA', borderTop: '1px solid #EBEBEB', borderBottom: '1px solid #F5F5F5' }}>
+              <span style={{ fontSize: '9px', fontWeight: 700, color: '#AAA', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Percorso</span>
+            </div>
+          </>
+        )}
+
         {percorso.length === 0 ? (
           <div style={{ padding: '1.5rem 1.25rem', textAlign: 'center' }}>
             <p style={{ fontSize: '13px', color: '#BBB', lineHeight: 1.6 }}>
@@ -606,6 +654,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           percorso.map((entry, i) => {
+            const isExpanded = expandedIds.has(entry.course_id);
             const isOpen = openCourseId === entry.course_id;
             const days = entry.stepDeadline ? daysUntil(entry.stepDeadline) : null;
             const urgent = days !== null && days >= 0 && days <= 30;
@@ -717,25 +766,29 @@ export default function DashboardPage() {
 
             return (
               <div key={entry.course_id} style={{ borderBottom: i < percorso.length - 1 ? '1px solid #F5F5F5' : 'none' }}>
-                <div style={{ padding: '0.875rem 1.25rem 0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.625rem' }}>
-                    <div style={{ flex: 1, minWidth: 0, marginRight: '0.5rem' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#222', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {entry.uniShort}
-                      </div>
-                      <div style={{ fontSize: '10px', color: '#999', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {entry.courseName}
-                      </div>
+                {/* Accordion header — always visible */}
+                <button
+                  onClick={() => toggleExpand(entry.course_id)}
+                  style={{ width: '100%', padding: '0.875rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: entry.done ? '#888' : '#222', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {entry.uniShort}
                     </div>
-                    <span style={{
-                      fontSize: '10px', fontWeight: 600, flexShrink: 0,
-                      padding: '0.15rem 0.5rem', borderRadius: '20px',
-                      background: entry.done ? '#E4F0ED' : '#F5F5F5',
-                      color: entry.done ? '#1B5E52' : '#888',
-                    }}>
-                      {entry.done ? <><IconCheck size={10} strokeWidth={2.5} /> Completato</> : `step ${entry.stepIndex + 1}/${entry.totalSteps}`}
-                    </span>
+                    <div style={{ fontSize: '10px', color: '#999', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {entry.courseName}
+                    </div>
                   </div>
+                  <span style={{ fontSize: '10px', fontWeight: 600, flexShrink: 0, padding: '0.15rem 0.5rem', borderRadius: '20px', background: entry.done ? '#E4F0ED' : '#F5F5F5', color: entry.done ? '#1B5E52' : '#888' }}>
+                    {entry.done ? <><IconCheck size={10} strokeWidth={2.5} /> Completato</> : `step ${entry.stepIndex + 1}/${entry.totalSteps}`}
+                  </span>
+                  <IconChevDown size={14} strokeWidth={2} style={{ flexShrink: 0, color: '#BBB', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                </button>
+
+                {/* Expanded content */}
+                {isExpanded && (
+                <div style={{ padding: '0 1.25rem 0.75rem', borderTop: '1px solid #F5F5F5' }}>
+                  <div style={{ height: '0.75rem' }} />
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                     {entry.allSteps.map((step, si) => {
@@ -840,13 +893,12 @@ export default function DashboardPage() {
                           style={{
                             width: '100%', padding: '0.625rem', borderRadius: '10px',
                             fontSize: '12px', fontWeight: 600,
-                            background: urgent ? '#FFF1F1' : '#F0FDF4',
-                            color: urgent ? '#EF4444' : '#1B5E52',
-                            border: `1.5px solid ${urgent ? '#FCA5A5' : '#A7F3D0'}`,
+                            background: urgent ? '#FFF1F1' : '#fff',
+                            color: urgent ? '#EF4444' : '#333',
+                            border: `1.5px solid ${urgent ? '#FCA5A5' : '#D0D0D0'}`,
                             cursor: 'pointer', textAlign: 'center',
                           }}>
-                          <IconCheck size={13} strokeWidth={2.2} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
-                          Ho completato: {entry.currentStep.label_it}
+                          Segna come completato: {entry.currentStep.label_it}
                         </button>
                       )}
                     </div>
@@ -866,13 +918,15 @@ export default function DashboardPage() {
                     </p>
                   )}
                 </div>
+                )}
               </div>
             );
           })
         )}
       </div>
     </section>
-  );
+    );
+  };
 
   return (
     <div style={{ background: '#F5F5F5', minHeight: '100svh', paddingBottom: '2.5rem' }}>
@@ -900,7 +954,6 @@ export default function DashboardPage() {
           {PercorsoSection()}
           {sectionCorsi}
           {sectionDirezione}
-          {sectionQuickActions}
         </>
       ) : (
         <>
@@ -908,7 +961,6 @@ export default function DashboardPage() {
           {sectionCorsi}
           {sectionProssimoStep}
           {PercorsoSection()}
-          {sectionQuickActions}
         </>
       )}
     </div>
