@@ -16,7 +16,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import {
   IconBookmark, IconCalendar, IconBuilding, IconHeart, IconSearch,
   IconCompass, IconCheck, IconX, IconAlert, IconArrowRight,
-  IconUsers, IconClock, IconExtLink, IconChevDown,
+  IconUsers, IconClock, IconExtLink, IconChevDown, IconChevRight,
 } from '@/components/Icons';
 import { U2FLogo } from '@/components/U2FLogo';
 import type { Course } from '@/lib/data';
@@ -402,6 +402,33 @@ export default function DashboardPage() {
             <p style={{ fontSize: '12px', color: '#AAA', textAlign: 'center' }}>
               ✓ Percorso di ammissione completato
             </p>
+          </>
+        )}
+
+        {/* Prossimo step generico — exploration mode */}
+        {!urgencyMode && (
+          <>
+            <div style={{ height: '1px', background: '#F0F0F0', margin: '1rem 0 0.875rem' }} />
+            <Link href={nextStep.href} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1B5E52',
+              }}>
+                <IconCompass size={20} strokeWidth={1.75} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '9px', color: '#BBB', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1px' }}>
+                  PROSSIMO STEP
+                </p>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
+                  {nextStep.title}
+                </p>
+                <p style={{ fontSize: '11px', color: '#888', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {nextStep.sub}
+                </p>
+              </div>
+              <IconChevRight size={14} color="#BBB" />
+            </Link>
           </>
         )}
       </div>
@@ -923,6 +950,30 @@ export default function DashboardPage() {
             );
           })
         )}
+        {/* ── Test di orientamento ── */}
+        <div style={{ margin: '0.875rem 1.25rem 1.25rem' }}>
+          <Link href="/orientamento" style={{ textDecoration: 'none', display: 'block' }}>
+            <div style={{
+              background: '#1B5E52', borderRadius: '14px',
+              padding: '1rem 1.25rem',
+              display: 'flex', alignItems: 'center', gap: '1rem',
+            }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '2px' }}>
+                  Test di orientamento
+                </p>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>
+                  Scopri chi sei — disponibile prossimamente
+                </p>
+              </div>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 22h14M5 2h14" />
+                <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+                <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+              </svg>
+            </div>
+          </Link>
+        </div>
       </div>
     </section>
     );
@@ -959,7 +1010,6 @@ export default function DashboardPage() {
         <>
           {sectionDirezione}
           {sectionCorsi}
-          {sectionProssimoStep}
           {PercorsoSection()}
         </>
       )}
