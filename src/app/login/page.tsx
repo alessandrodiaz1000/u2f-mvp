@@ -69,7 +69,7 @@ export default function LoginPage() {
               cursor: 'pointer', letterSpacing: '-0.01em',
             }}
           >
-            Esci e usa un altro account
+            Esci
           </button>
         </div>
 
@@ -186,7 +186,7 @@ export default function LoginPage() {
       {/* Toggle */}
       <div style={{ marginTop: '2rem', textAlign: 'center' }}>
         <span style={{ fontSize: '14px', color: 'var(--text-3)' }}>
-          {mode === 'signup' ? 'Hai già un account? ' : 'Non hai un account? '}
+          {mode === 'signup' ? 'Sei già registrato? ' : 'Prima volta? '}
         </span>
         <button
           onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
