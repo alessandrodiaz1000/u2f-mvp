@@ -7,19 +7,13 @@ import { U2FLogo } from '@/components/U2FLogo';
 type Mode = 'login' | 'signup';
 
 export default function LoginPage() {
-  const { login, user } = useAuth();
+  const { login, logout, user } = useAuth();
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('signup');
   const [name, setName]   = useState('');
   const [email, setEmail] = useState('');
   const [pw, setPw]       = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Already logged in
-  if (user) {
-    router.replace(user.onboarded ? '/dashboard' : '/onboarding');
-    return null;
-  }
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,14 +25,95 @@ export default function LoginPage() {
     }, 600);
   };
 
+  // Already logged in — show resume/logout options instead of instant redirect
+  if (user) {
+    return (
+      <div style={{
+        minHeight: '100svh', background: 'var(--bg)',
+        display: 'flex', flexDirection: 'column',
+        padding: '0 1.5rem',
+      }}>
+        <div style={{ paddingTop: '3.5rem', marginBottom: '3rem' }}>
+          <U2FLogo size={44} />
+        </div>
+
+        <h1 style={{
+          fontSize: 'clamp(1.5rem, 7vw, 2rem)', fontWeight: 700,
+          letterSpacing: '-0.04em', color: 'var(--text-1)',
+          marginBottom: '0.5rem',
+        }}>
+          Ciao, {user.name.split(' ')[0]}.
+        </h1>
+        <p style={{ fontSize: '0.9375rem', color: 'var(--text-2)', lineHeight: 1.6, marginBottom: '2.5rem' }}>
+          Hai già una sessione attiva.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <button
+            onClick={() => router.push(user.onboarded ? '/dashboard' : '/onboarding')}
+            style={{
+              background: 'var(--accent)', color: '#fff',
+              border: 'none', borderRadius: '14px',
+              padding: '1rem', fontSize: '16px', fontWeight: 600,
+              cursor: 'pointer', letterSpacing: '-0.02em',
+            }}
+          >
+            Continua come {user.name.split(' ')[0]} →
+          </button>
+          <button
+            onClick={() => { logout(); router.push('/'); }}
+            style={{
+              background: 'transparent', color: 'var(--text-2)',
+              border: '1.5px solid var(--border-2)', borderRadius: '14px',
+              padding: '1rem', fontSize: '15px', fontWeight: 500,
+              cursor: 'pointer', letterSpacing: '-0.01em',
+            }}
+          >
+            Esci e usa un altro account
+          </button>
+        </div>
+
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => router.push('/')}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: '13px', color: 'var(--text-3)', paddingBottom: '2rem',
+            textAlign: 'center',
+          }}
+        >
+          ← Torna alla home
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       minHeight: '100svh', background: 'var(--bg)',
       display: 'flex', flexDirection: 'column',
       padding: '0 1.5rem',
     }}>
+      {/* Back button */}
+      <div style={{ paddingTop: '1.25rem' }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.25rem',
+            fontSize: '14px', color: 'var(--text-2)', fontWeight: 500,
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '0.25rem 0',
+          }}
+        >
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Indietro
+        </button>
+      </div>
+
       {/* Top */}
-      <div style={{ paddingTop: '3.5rem', marginBottom: '3rem' }}>
+      <div style={{ paddingTop: '2rem', marginBottom: '3rem' }}>
         <U2FLogo size={44} />
       </div>
 
@@ -121,7 +196,6 @@ export default function LoginPage() {
         </button>
       </div>
 
-      {/* Divider */}
       <div style={{ flex: 1 }} />
       <p style={{ fontSize: '11px', color: 'var(--text-3)', textAlign: 'center', paddingBottom: '2rem', lineHeight: 1.5 }}>
         Continuando accetti i termini di servizio.<br />I tuoi dati non vengono condivisi con terze parti.
