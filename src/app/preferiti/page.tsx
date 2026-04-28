@@ -146,9 +146,9 @@ export default function PreferitiPage() {
                               <span style={{ fontSize: '10px', fontWeight: 500, padding: '0.15rem 0.45rem', borderRadius: '5px', flexShrink: 0, background: ts.bg, color: ts.text, border: `1px solid ${ts.border}`, marginTop: '1px' }}>
                                 {c.tipo}
                               </span>
-                              <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-1)', lineHeight: 1.35 }}>
+                              <Link href={`/corso/${c.id}`} style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-1)', lineHeight: 1.35, textDecoration: 'none' }}>
                                 {c.nome}
-                              </span>
+                              </Link>
                             </div>
                             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
                               {c.durata && <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>{c.durata} {tp.years}</span>}

@@ -305,9 +305,9 @@ export default function EsploraPage() {
                     {c.tipo}
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13px', fontWeight: 500, color: '#111', lineHeight: 1.35, marginBottom: '3px' }}>
+                    <Link href={`/corso/${c.id}`} style={{ fontSize: '13px', fontWeight: 500, color: '#111', lineHeight: 1.35, marginBottom: '3px', textDecoration: 'none', display: 'block' }}>
                       {c.nome}
-                    </div>
+                    </Link>
                     <button
                       onClick={() => setUniMenu({ slug, url: c.url, name: c.universita })}
                       style={{

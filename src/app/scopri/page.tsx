@@ -215,7 +215,9 @@ export default function ScopriPage() {
               letterSpacing: '-0.04em', color: '#111',
               lineHeight: 1.15, marginBottom: '1.5rem',
             }}>
-              {current.nome}
+              <Link href={`/corso/${current.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                {current.nome}
+              </Link>
             </h2>
 
             {/* Badges */}
