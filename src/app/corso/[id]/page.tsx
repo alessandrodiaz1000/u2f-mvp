@@ -1,5 +1,6 @@
 'use client';
 import type { ReactNode } from 'react';
+import { useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -54,8 +55,9 @@ function getSimilarCourses(course: Course, count = 10): Course[] {
     .map(({ course }) => course);
 }
 
-function Pentagon({ values, size = 120 }: { values: number[]; size?: number }) {
-  const cx = 50, cy = 50, r = 34;
+// Pentagon con etichette complete — per la sezione Matching principale
+function PentagonFull({ values, size = 200 }: { values: number[]; size?: number }) {
+  const cx = 100, cy = 100, r = 62;
   const angles = Array.from({ length: 5 }, (_, i) => -Math.PI / 2 + (i * 2 * Math.PI) / 5);
   const outline = angles.map(a => ({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }));
   const filled = values.map((v, i) => ({
@@ -64,7 +66,49 @@ function Pentagon({ values, size = 120 }: { values: number[]; size?: number }) {
   }));
   const outlinePts = outline.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
   const filledPts = filled.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const labelR = r + 11;
+  const labelR = r + 22;
+  const labels = ['Posizione', 'Costo', 'Interessi', 'Attitudine', 'Accesso'];
+  return (
+    <svg viewBox="0 0 200 200" width={size} height={size}>
+      {[0.33, 0.66, 1].map((f, i) => (
+        <polygon key={i}
+          points={outline.map(p => `${(cx + (p.x - cx) * f).toFixed(1)},${(cy + (p.y - cy) * f).toFixed(1)}`).join(' ')}
+          fill="none" stroke="#D4CEC2" strokeWidth="0.7"
+        />
+      ))}
+      {outline.map((p, i) => (
+        <line key={i} x1={cx} y1={cy} x2={p.x.toFixed(1)} y2={p.y.toFixed(1)} stroke="#D4CEC2" strokeWidth="0.6" />
+      ))}
+      <polygon points={filledPts} fill="#1B5E52" fillOpacity="0.2" stroke="#1B5E52" strokeWidth="2" />
+      {filled.map((p, i) => (
+        <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="3.5" fill="#1B5E52" />
+      ))}
+      {angles.map((a, i) => {
+        const lx = (cx + labelR * Math.cos(a)).toFixed(1);
+        const ly = (cy + labelR * Math.sin(a)).toFixed(1);
+        return (
+          <text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
+            fontSize="8" fontWeight="600" fill="#1C2B26" fontFamily="Inter, sans-serif">
+            {labels[i]}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Pentagon piccolo per le card corsi simili
+function PentagonSmall({ values, size = 95 }: { values: number[]; size?: number }) {
+  const cx = 50, cy = 50, r = 32;
+  const angles = Array.from({ length: 5 }, (_, i) => -Math.PI / 2 + (i * 2 * Math.PI) / 5);
+  const outline = angles.map(a => ({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }));
+  const filled = values.map((v, i) => ({
+    x: cx + r * (v / 100) * Math.cos(angles[i]),
+    y: cy + r * (v / 100) * Math.sin(angles[i]),
+  }));
+  const outlinePts = outline.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const filledPts = filled.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const labelR = r + 10;
   const labels = ['Geo', 'Cos', 'Int', 'Att', 'Acc'];
   return (
     <svg viewBox="0 0 100 100" width={size} height={size}>
@@ -95,6 +139,17 @@ function Pentagon({ values, size = 120 }: { values: number[]; size?: number }) {
   );
 }
 
+function HourglassIcon() {
+  return (
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+      stroke="#B0A898" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 22h14M5 2h14" />
+      <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+      <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+    </svg>
+  );
+}
+
 function Section({ label, title, children, comingSoon }: {
   label: string; title: string; children?: ReactNode; comingSoon?: boolean;
 }) {
@@ -102,38 +157,29 @@ function Section({ label, title, children, comingSoon }: {
     <div style={{ borderTop: '1px solid #D4CEC2', paddingTop: '2rem', marginBottom: '2.5rem' }}>
       <div style={{
         fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em',
-        textTransform: 'uppercase', color: '#1B5E52', marginBottom: '0.35rem',
+        textTransform: 'uppercase', color: '#1B5E52', marginBottom: '0.4rem',
       }}>
         {label}
       </div>
       <h2 style={{
-        fontSize: '1.125rem', fontWeight: 700, color: '#1C2B26',
-        letterSpacing: '-0.03em', marginBottom: comingSoon ? '1rem' : '1.5rem',
+        fontSize: '1.375rem', fontWeight: 700, color: '#1C2B26',
+        letterSpacing: '-0.035em', marginBottom: comingSoon ? '1.25rem' : '1.5rem',
+        lineHeight: 1.2,
       }}>
         {title}
       </h2>
       {comingSoon ? (
         <div style={{
-          background: '#F5F1E8', borderRadius: '10px', padding: '1.25rem 1.5rem',
-          color: '#8A9D95', fontSize: '13px', fontStyle: 'italic',
+          background: '#F5F1E8', borderRadius: '12px', padding: '2rem 1.5rem',
           border: '1px solid #E4DDD0',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem',
         }}>
-          Disponibile prossimamente
+          <HourglassIcon />
+          <span style={{ fontSize: '13px', color: '#8A9D95', fontWeight: 500 }}>
+            Disponibile prossimamente
+          </span>
         </div>
       ) : children}
-    </div>
-  );
-}
-
-function InfoRow({ label, children, last }: { label: string; children: ReactNode; last?: boolean }) {
-  return (
-    <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-      gap: '1rem', padding: '0.875rem 0',
-      borderBottom: last ? 'none' : '1px solid #EDE8DC',
-    }}>
-      <span style={{ fontSize: '13px', color: '#5C6B64', fontWeight: 500, flexShrink: 0 }}>{label}</span>
-      <div style={{ fontSize: '13px', color: '#1C2B26', fontWeight: 600, textAlign: 'right' }}>{children}</div>
     </div>
   );
 }
@@ -142,6 +188,42 @@ export default function CorsoPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragScrollLeft = useRef(0);
+
+  // Wheel → scroll orizzontale
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    isDragging.current = true;
+    dragStartX.current = e.pageX - (scrollRef.current?.offsetLeft ?? 0);
+    dragScrollLeft.current = scrollRef.current?.scrollLeft ?? 0;
+    if (scrollRef.current) scrollRef.current.style.cursor = 'grabbing';
+  };
+  const onMouseUp = () => {
+    isDragging.current = false;
+    if (scrollRef.current) scrollRef.current.style.cursor = 'grab';
+  };
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    e.preventDefault();
+    const x = e.pageX - (scrollRef.current?.offsetLeft ?? 0);
+    const walk = x - dragStartX.current;
+    if (scrollRef.current) scrollRef.current.scrollLeft = dragScrollLeft.current - walk;
+  };
 
   const id = Number(params.id);
   const course = MILAN_COURSES.find(c => c.id === id);
@@ -160,244 +242,291 @@ export default function CorsoPage() {
   const admission = getAdmissionInfo(course.universita, course.classe, user?.startYear || undefined);
   const similar = getSimilarCourses(course);
   const ts = TIPO_COLORS[course.tipo] ?? { text: '#666', bg: '#F5F5F5' };
-  const scoreValues = user?.onboarded ? computeScoreValues(course, user) : [70, 55, 50, 30, 55] as [number, number, number, number, number];
+  const scoreValues = user?.onboarded
+    ? computeScoreValues(course, user)
+    : [70, 55, 50, 30, 55] as [number, number, number, number, number];
   const matchPct = user?.onboarded ? getMatchPct(course, user) : null;
 
-  const description = `Corso di laurea ${course.tipo.toLowerCase()} in ${course.nome}, erogato da ${course.universita} nella sede di ${course.citta}. La durata prevista è di ${course.durata} ${course.durata === 1 ? 'anno' : 'anni'}${course.cfu ? ` per un totale di ${course.cfu} CFU` : ''}. Il corso appartiene alla classe ${course.classe} ed è tenuto in ${course.lingua}.`;
+  const description = `Corso di laurea ${course.tipo.toLowerCase()} in ${course.nome}, erogato da ${course.universita} nella sede di ${course.citta}. La durata prevista e di ${course.durata} ${course.durata === 1 ? 'anno' : 'anni'}${course.cfu ? ` per un totale di ${course.cfu} CFU` : ''}. Il corso appartiene alla classe ${course.classe} ed e tenuto in ${course.lingua}.`;
+
+  // Bullet list items per Dettagli del corso
+  const detailItems: { label: string; value: ReactNode }[] = [
+    {
+      label: 'Durata',
+      value: `${course.durata} ${course.durata === 1 ? 'anno' : 'anni'}${course.cfu ? ` · ${course.cfu} CFU` : ''}`,
+    },
+    { label: 'Classe di laurea', value: course.classe },
+    { label: 'Lingua', value: course.lingua || 'Non specificata' },
+    {
+      label: 'Ammissione',
+      value: admission ? (
+        <span>
+          {admission.test}
+          {admission.rounds[0]?.application_close && (
+            <span style={{ fontWeight: 400, color: '#5C6B64' }}>
+              {' '}· scadenza {formatDeadline(admission.rounds[0].application_close)}
+              {admission.estimated ? ' (stimata)' : ''}
+            </span>
+          )}
+          {admission.bando_url && (
+            <>
+              {' '}
+              <a href={admission.bando_url} target="_blank" rel="noopener noreferrer"
+                style={{ color: '#1B5E52', textDecoration: 'none', fontWeight: 500 }}>
+                Bando
+              </a>
+            </>
+          )}
+        </span>
+      ) : 'Non disponibile',
+    },
+    {
+      label: 'Sito ufficiale',
+      value: course.url ? (
+        <a href={course.url} target="_blank" rel="noopener noreferrer"
+          style={{ color: '#1B5E52', textDecoration: 'none', fontWeight: 600 }}>
+          Apri sito
+        </a>
+      ) : 'Non disponibile',
+    },
+  ];
 
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
+    <>
+      <style>{`
+        .similar-scroll::-webkit-scrollbar { display: none; }
+        .similar-scroll { -ms-overflow-style: none; scrollbar-width: none; cursor: grab; user-select: none; }
+        .similar-scroll:active { cursor: grabbing; }
+      `}</style>
 
-      {/* Back */}
-      <button
-        onClick={() => router.back()}
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: '#8A9D95', fontSize: '13px', padding: '0 0 1.75rem',
-          display: 'flex', alignItems: 'center', gap: '0.35rem',
-        }}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A9D95" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 12H5M12 5l-7 7 7 7" />
-        </svg>
-        Indietro
-      </button>
+      <div style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
 
-      {/* Header */}
-      <div style={{ marginBottom: '2.5rem' }}>
-        {slug ? (
-          <Link href={`/universita/${slug}`} style={{
-            fontSize: '11px', fontWeight: 600, color: '#1B5E52',
-            textDecoration: 'none', letterSpacing: '0.02em',
-            textTransform: 'uppercase', display: 'block', marginBottom: '0.6rem',
+        {/* Back */}
+        <button
+          onClick={() => router.back()}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#8A9D95', fontSize: '13px', padding: '0 0 1.75rem',
+            display: 'flex', alignItems: 'center', gap: '0.35rem',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A9D95" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7" />
+          </svg>
+          Indietro
+        </button>
+
+        {/* Header */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          {slug ? (
+            <Link href={`/universita/${slug}`} style={{
+              fontSize: '11px', fontWeight: 700, color: '#1B5E52',
+              textDecoration: 'none', letterSpacing: '0.06em',
+              textTransform: 'uppercase', display: 'block', marginBottom: '0.6rem',
+            }}>
+              {course.universita}
+            </Link>
+          ) : (
+            <div style={{ fontSize: '11px', color: '#8A9D95', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {course.universita}
+            </div>
+          )}
+          <h1 style={{
+            fontSize: 'clamp(1.75rem, 6vw, 2.25rem)', fontWeight: 700,
+            color: '#1C2B26', letterSpacing: '-0.04em',
+            lineHeight: 1.1, marginBottom: '1rem',
           }}>
-            {course.universita}
-          </Link>
-        ) : (
-          <div style={{ fontSize: '11px', color: '#8A9D95', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-            {course.universita}
+            {course.nome}
+          </h1>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, padding: '0.3rem 0.75rem', borderRadius: '20px', background: ts.bg, color: ts.text }}>
+              {course.tipo}
+            </span>
+            {course.lingua && course.lingua !== 'Italiano' && (
+              <span style={{ fontSize: '11px', padding: '0.3rem 0.75rem', borderRadius: '20px', background: '#F0F0F0', color: '#666' }}>
+                {course.lingua}
+              </span>
+            )}
+            {course.area && (
+              <span style={{ fontSize: '11px', padding: '0.3rem 0.75rem', borderRadius: '20px', background: '#F0F0F0', color: '#666' }}>
+                {course.area}
+              </span>
+            )}
           </div>
-        )}
-        <h1 style={{
-          fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontWeight: 700,
-          color: '#1C2B26', letterSpacing: '-0.04em',
-          lineHeight: 1.15, marginBottom: '1rem',
-        }}>
-          {course.nome}
-        </h1>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, padding: '0.3rem 0.75rem', borderRadius: '20px', background: ts.bg, color: ts.text }}>
-            {course.tipo}
-          </span>
-          {course.lingua && course.lingua !== 'Italiano' && (
-            <span style={{ fontSize: '11px', padding: '0.3rem 0.75rem', borderRadius: '20px', background: '#F0F0F0', color: '#666' }}>
-              {course.lingua}
-            </span>
-          )}
-          {course.area && (
-            <span style={{ fontSize: '11px', padding: '0.3rem 0.75rem', borderRadius: '20px', background: '#F0F0F0', color: '#666' }}>
-              {course.area}
-            </span>
-          )}
         </div>
-      </div>
 
-      {/* INFORMAZIONI PRINCIPALI */}
-      <Section label="Informazioni principali" title="Dettagli del corso">
-        <InfoRow label="Durata">
-          {course.durata} {course.durata === 1 ? 'anno' : 'anni'}{course.cfu ? ` · ${course.cfu} CFU` : ''}
-        </InfoRow>
-        <InfoRow label="Classe di laurea">
-          {course.classe}
-        </InfoRow>
-        <InfoRow label="Lingua">
-          {course.lingua || 'Non specificata'}
-        </InfoRow>
-        <InfoRow label="Ammissione">
-          {admission ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-end' }}>
-              <span>{admission.test}</span>
-              {admission.rounds[0]?.application_close && (
-                <span style={{ fontSize: '11px', color: '#8A9D95', fontWeight: 400 }}>
-                  Scadenza: {formatDeadline(admission.rounds[0].application_close)}
-                  {admission.estimated ? ' (stimata)' : ''}
-                </span>
-              )}
-              {admission.bando_url && (
-                <a href={admission.bando_url} target="_blank" rel="noopener noreferrer"
-                  style={{ fontSize: '11px', color: '#1B5E52', textDecoration: 'none', fontWeight: 500 }}>
-                  Vedi bando
-                </a>
-              )}
+        {/* INFORMAZIONI PRINCIPALI */}
+        <Section label="Informazioni principali" title="Dettagli del corso">
+          {/* Bullet list */}
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {detailItems.map(({ label, value }) => (
+              <li key={label} style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', fontSize: '14px' }}>
+                <span style={{ color: '#C4BDB0', flexShrink: 0, fontSize: '12px' }}>—</span>
+                <span style={{ color: '#5C6B64', fontWeight: 500, flexShrink: 0 }}>{label}:</span>
+                <span style={{ color: '#1C2B26', fontWeight: 600 }}>{value}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Descrizione */}
+          <div>
+            <div style={{
+              fontSize: '15px', fontWeight: 700, color: '#1C2B26',
+              letterSpacing: '-0.02em', marginBottom: '0.6rem',
+            }}>
+              Descrizione
+            </div>
+            <p style={{ fontSize: '14px', color: '#3A4A42', lineHeight: 1.7, margin: 0 }}>
+              {description}
+            </p>
+          </div>
+        </Section>
+
+        {/* OVERVIEW */}
+        <Section label="Overview" title="Universita e dipartimento" comingSoon />
+
+        {/* POSIZIONE */}
+        <Section label="Posizione" title="Dove si studia" comingSoon />
+
+        {/* MATCHING */}
+        <Section label="Matching" title="Compatibilita con il tuo profilo">
+          {!user?.onboarded ? (
+            <div style={{
+              background: '#F5F1E8', borderRadius: '12px', padding: '1.5rem',
+              border: '1px solid #E4DDD0', fontSize: '14px', color: '#5C6B64', textAlign: 'center',
+            }}>
+              <Link href="/login" style={{ color: '#1B5E52', fontWeight: 700, textDecoration: 'none' }}>Accedi</Link>
+              {' '}per vedere la compatibilita con il tuo profilo.
             </div>
           ) : (
-            <span style={{ color: '#8A9D95', fontWeight: 400 }}>Non disponibile</span>
-          )}
-        </InfoRow>
-        <InfoRow label="Sito ufficiale" last>
-          {course.url ? (
-            <a href={course.url} target="_blank" rel="noopener noreferrer"
-              style={{ color: '#1B5E52', textDecoration: 'none' }}>
-              Apri sito
-            </a>
-          ) : (
-            <span style={{ color: '#8A9D95', fontWeight: 400 }}>Non disponibile</span>
-          )}
-        </InfoRow>
-        <div style={{ paddingTop: '1rem' }}>
-          <div style={{ fontSize: '12px', color: '#5C6B64', fontWeight: 500, marginBottom: '0.5rem' }}>Descrizione</div>
-          <p style={{ fontSize: '13px', color: '#1C2B26', lineHeight: 1.65, margin: 0 }}>
-            {description}
-          </p>
-        </div>
-      </Section>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
 
-      {/* OVERVIEW */}
-      <Section label="Overview" title="Università e dipartimento" comingSoon />
+              {/* Pentagon centrato */}
+              <PentagonFull values={scoreValues} size={220} />
 
-      {/* POSIZIONE */}
-      <Section label="Posizione" title="Dove si studia" comingSoon />
+              {/* Spiegazione vertici */}
+              <p style={{ fontSize: '12px', color: '#8A9D95', textAlign: 'center', lineHeight: 1.6, maxWidth: '380px', margin: 0 }}>
+                <strong style={{ color: '#5C6B64' }}>Posizione</strong> (sede a Milano), <strong style={{ color: '#5C6B64' }}>Costo</strong> (pubblico/privato),{' '}
+                <strong style={{ color: '#5C6B64' }}>Interessi</strong> (aree di studio), <strong style={{ color: '#5C6B64' }}>Attitudine</strong> (orientamento), <strong style={{ color: '#5C6B64' }}>Accesso</strong> (modalita di ammissione).
+              </p>
 
-      {/* MATCHING */}
-      <Section label="Matching" title="Compatibilita con il tuo profilo">
-        {!user?.onboarded ? (
-          <div style={{
-            background: '#F5F1E8', borderRadius: '10px', padding: '1.25rem 1.5rem',
-            border: '1px solid #E4DDD0', fontSize: '13px', color: '#5C6B64',
-          }}>
-            <Link href="/login" style={{ color: '#1B5E52', fontWeight: 600, textDecoration: 'none' }}>Accedi</Link>
-            {' '}per vedere la compatibilita con il tuo profilo.
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-            <Pentagon values={scoreValues} size={150} />
-            <div style={{ flex: 1, minWidth: '160px' }}>
+              {/* Match percentuale */}
               {matchPct !== null && (
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <div style={{ fontSize: '2.75rem', fontWeight: 700, color: '#1B5E52', letterSpacing: '-0.05em', lineHeight: 1 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '3.5rem', fontWeight: 700, color: '#1B5E52', letterSpacing: '-0.05em', lineHeight: 1 }}>
                     {matchPct}%
                   </div>
-                  <div style={{ fontSize: '12px', color: '#8A9D95', marginTop: '4px' }}>
+                  <div style={{ fontSize: '13px', color: '#8A9D95', marginTop: '6px' }}>
                     Match con i tuoi interessi
                   </div>
                 </div>
               )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+
+              {/* Barre dimensioni */}
+              <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {([
                   ['Posizione', scoreValues[0]],
-                  ['Tipo universita', scoreValues[1]],
+                  ['Costo', scoreValues[1]],
                   ['Interessi', scoreValues[2]],
                   ['Attitudine', scoreValues[3]],
                   ['Accesso', scoreValues[4]],
                 ] as [string, number][]).map(([label, value]) => (
                   <div key={label}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                      <span style={{ fontSize: '11px', color: '#5C6B64' }}>{label}</span>
-                      <span style={{ fontSize: '11px', color: '#8A9D95' }}>{value}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '12px', color: '#5C6B64', fontWeight: 500 }}>{label}</span>
+                      <span style={{ fontSize: '12px', color: '#8A9D95' }}>{value}/100</span>
                     </div>
-                    <div style={{ height: '4px', background: '#E4DDD0', borderRadius: '2px', overflow: 'hidden' }}>
-                      <div style={{ width: `${value}%`, height: '100%', background: '#1B5E52', borderRadius: '2px' }} />
+                    <div style={{ height: '5px', background: '#E4DDD0', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: `${value}%`, height: '100%', background: '#1B5E52', borderRadius: '3px' }} />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+          )}
+        </Section>
+
+        {/* CORSI SIMILI */}
+        <div style={{ borderTop: '1px solid #D4CEC2', paddingTop: '2rem' }}>
+          <div style={{
+            fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: '#1B5E52', marginBottom: '0.4rem',
+          }}>
+            Corsi simili
           </div>
-        )}
-      </Section>
-
-      {/* CORSI SIMILI */}
-      <div style={{ borderTop: '1px solid #D4CEC2', paddingTop: '2rem' }}>
-        <div style={{
-          fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em',
-          textTransform: 'uppercase', color: '#1B5E52', marginBottom: '0.35rem',
-        }}>
-          Corsi simili
-        </div>
-        <h2 style={{
-          fontSize: '1.125rem', fontWeight: 700, color: '#1C2B26',
-          letterSpacing: '-0.03em', marginBottom: '1.25rem',
-        }}>
-          Potrebbero interessarti
-        </h2>
-        <div style={{
-          display: 'flex', gap: '0.75rem',
-          overflowX: 'auto', paddingBottom: '0.5rem',
-          scrollbarWidth: 'thin',
-        }}>
-          {similar.map(c => {
-            const cts = TIPO_COLORS[c.tipo] ?? { text: '#666', bg: '#F5F5F5' };
-            const simValues = user?.onboarded
-              ? computeScoreValues(c, user)
-              : [70, 55, 50, 30, 55] as [number, number, number, number, number];
-            const simMatch = user?.onboarded ? getMatchPct(c, user) : null;
-            return (
-              <Link
-                key={c.id}
-                href={`/corso/${c.id}`}
-                style={{ textDecoration: 'none', flexShrink: 0, width: '165px' }}
-              >
-                <div style={{
-                  background: '#F5F1E8', borderRadius: '12px', padding: '0.875rem',
-                  border: '1px solid #D4CEC2',
-                  display: 'flex', flexDirection: 'column', gap: '0.5rem',
-                  height: '100%',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{
-                      fontSize: '9px', fontWeight: 600, padding: '0.2rem 0.5rem',
-                      borderRadius: '4px', background: cts.bg, color: cts.text,
-                    }}>
-                      {c.tipo}
-                    </span>
-                    {simMatch !== null && (
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#1B5E52' }}>
-                        {simMatch}%
-                      </span>
-                    )}
-                  </div>
+          <h2 style={{
+            fontSize: '1.375rem', fontWeight: 700, color: '#1C2B26',
+            letterSpacing: '-0.035em', marginBottom: '1.25rem', lineHeight: 1.2,
+          }}>
+            Potrebbero interessarti
+          </h2>
+          <div
+            ref={scrollRef}
+            className="similar-scroll"
+            onMouseDown={onMouseDown}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+            onMouseMove={onMouseMove}
+            style={{
+              display: 'flex', gap: '0.75rem',
+              overflowX: 'auto', paddingBottom: '0.25rem',
+            }}
+          >
+            {similar.map(c => {
+              const cts = TIPO_COLORS[c.tipo] ?? { text: '#666', bg: '#F5F5F5' };
+              const simValues = user?.onboarded
+                ? computeScoreValues(c, user)
+                : [70, 55, 50, 30, 55] as [number, number, number, number, number];
+              const simMatch = user?.onboarded ? getMatchPct(c, user) : null;
+              return (
+                <Link
+                  key={c.id}
+                  href={`/corso/${c.id}`}
+                  style={{ textDecoration: 'none', flexShrink: 0, width: '165px' }}
+                  draggable={false}
+                >
                   <div style={{
-                    fontSize: '12px', fontWeight: 600, color: '#1C2B26',
-                    lineHeight: 1.3, flex: 1,
+                    background: '#F5F1E8', borderRadius: '12px', padding: '0.875rem',
+                    border: '1px solid #D4CEC2',
+                    display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                    height: '100%',
                   }}>
-                    {c.nome}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{
+                        fontSize: '9px', fontWeight: 600, padding: '0.2rem 0.5rem',
+                        borderRadius: '4px', background: cts.bg, color: cts.text,
+                      }}>
+                        {c.tipo}
+                      </span>
+                      {simMatch !== null && (
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#1B5E52' }}>
+                          {simMatch}%
+                        </span>
+                      )}
+                    </div>
+                    <div style={{
+                      fontSize: '12px', fontWeight: 600, color: '#1C2B26',
+                      lineHeight: 1.3, flex: 1,
+                    }}>
+                      {c.nome}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <PentagonSmall values={simValues} size={95} />
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#8A9D95', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8A9D95" strokeWidth="2" strokeLinecap="round">
+                        <path d="M3 21V6l9-3 9 3v15" /><path d="M9 21V12h6v9" />
+                      </svg>
+                      {c.universita.length > 26 ? c.universita.slice(0, 24) + '…' : c.universita}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <Pentagon values={simValues} size={95} />
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#8A9D95', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8A9D95" strokeWidth="2" strokeLinecap="round">
-                      <path d="M3 21V6l9-3 9 3v15" /><path d="M9 21V12h6v9" />
-                    </svg>
-                    {c.universita.length > 26 ? c.universita.slice(0, 24) + '…' : c.universita}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-    </div>
+      </div>
+    </>
   );
 }
