@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import {
   MILAN_UNIVERSITIES, MILAN_COURSES, UNI_SUBJECTS, UNI_DEGREE_TYPES, UNI_COURSE_COUNT,
   SUBJECT_CATEGORIES, DOCTORAL_ONLY, uniSlug, resolveUniversity,
@@ -9,6 +9,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useAuth } from '@/context/AuthContext';
 import { IconExtLink } from '@/components/Icons';
+import { scoreCourse } from '@/lib/scoring';
 import { useRouter } from 'next/navigation';
 
 type Tab = 'uni' | 'corsi';
@@ -60,12 +61,31 @@ export default function EsploraPage() {
 
   const filteredCorsi = useMemo(() => {
     const q = courseSearch.toLowerCase().trim();
-    return MILAN_COURSES.filter(c => {
+    const results = MILAN_COURSES.filter(c => {
       if (q && !c.nome.toLowerCase().includes(q) && !c.universita.toLowerCase().includes(q)) return false;
       if (courseType && c.tipo !== courseType) return false;
       return true;
     });
-  }, [courseSearch, courseType]);
+    if (user) {
+      results.sort((a, b) => scoreCourse(b, user).total - scoreCourse(a, user).total);
+    }
+    return results;
+  }, [courseSearch, courseType, user]);
+
+  const [visible, setVisible] = useState(20);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setVisible(20);
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      entries => { if (entries[0].isIntersecting) setVisible(v => v + 20); },
+      { threshold: 0.1 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [filteredCorsi]);
 
   const toggleArea = (a: string) =>
     setSelectedAreas(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
@@ -272,21 +292,13 @@ export default function EsploraPage() {
         </div>
       ) : (
         <div>
-          {/* Count */}
-          <div style={{ padding: '0.75rem 1.25rem 0' }}>
-            <span style={{ fontSize: '12px', color: '#999' }}>
-              <span style={{ fontWeight: 600, color: 'var(--accent)' }}>{filteredCorsi.length}</span>
-              {' corsi'}
-            </span>
-          </div>
-
           {/* Course list */}
           <div style={{ padding: '0.625rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1px', background: '#fff' }}>
             {filteredCorsi.length === 0 ? (
               <p style={{ textAlign: 'center', fontSize: '14px', color: '#999', padding: '3rem 0' }}>
                 Nessun corso trovato
               </p>
-            ) : filteredCorsi.map(c => {
+            ) : filteredCorsi.slice(0, visible).map(c => {
               const ts = TIPO_STYLE[c.tipo] ?? TIPO_STYLE.Triennale;
               const mur = resolveUniversity(c.universita);
               const slug = mur ? uniSlug(mur.name) : null;
@@ -336,6 +348,10 @@ export default function EsploraPage() {
                 </div>
               );
             })}
+            {/* Infinite scroll sentinel */}
+            {visible < filteredCorsi.length && (
+              <div ref={sentinelRef} style={{ height: '1px' }} />
+            )}
           </div>
         </div>
       )}
