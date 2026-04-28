@@ -62,7 +62,11 @@ export default function PreferitiPage() {
 
       {favoriteCourses.length === 0 ? (
         <div style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔖</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: '#CCC' }}>
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.25} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </div>
           <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-1)', marginBottom: '0.625rem', letterSpacing: '-0.03em' }}>
             {tp.noSavedTitle}
           </h2>
@@ -81,14 +85,32 @@ export default function PreferitiPage() {
         </div>
       ) : (
         <>
-          {/* Compare hint */}
-          {favoriteCourses.length >= 2 && (
-            <div style={{ padding: '0.75rem 1.25rem 0' }}>
-              <p style={{ fontSize: '12px', color: 'var(--text-3)', lineHeight: 1.5 }}>
-                {tp.compareHint}
-              </p>
+          {/* Compare instruction */}
+          <div style={{ padding: '0.875rem 1.25rem 0' }}>
+            <div style={{
+              background: 'var(--accent-bg)', borderRadius: '14px',
+              border: '1px solid rgba(27,94,82,0.15)',
+              padding: '0.875rem 1rem',
+              display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
+            }}>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
+                background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent)', marginBottom: '3px', letterSpacing: '-0.01em' }}>
+                  Come confrontare i corsi
+                </p>
+                <p style={{ fontSize: '12px', color: 'var(--text-2)', lineHeight: 1.55 }}>
+                  {tp.compareHint}
+                </p>
+              </div>
             </div>
-          )}
+          </div>
 
           <div style={{ padding: '0.75rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {Object.entries(byUniversity).map(([uniName, courses]) => {
