@@ -64,7 +64,7 @@ export default function EsploraPage() {
       if (q && !c.nome.toLowerCase().includes(q) && !c.universita.toLowerCase().includes(q)) return false;
       if (courseType && c.tipo !== courseType) return false;
       return true;
-    }).slice(0, 80);
+    });
   }, [courseSearch, courseType]);
 
   const toggleArea = (a: string) =>
@@ -276,7 +276,7 @@ export default function EsploraPage() {
           <div style={{ padding: '0.75rem 1.25rem 0' }}>
             <span style={{ fontSize: '12px', color: '#999' }}>
               <span style={{ fontWeight: 600, color: 'var(--accent)' }}>{filteredCorsi.length}</span>
-              {filteredCorsi.length === 80 ? '+ corsi' : ' corsi'}
+              {' corsi'}
             </span>
           </div>
 
