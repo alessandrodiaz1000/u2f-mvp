@@ -411,8 +411,6 @@ export default function HomePage() {
             <StatRow value={String(MILAN_UNI_COUNT)} label={t.home.statUni} sub={t.home.statUniSub} />
             <div style={{ height: '1px', background: 'var(--border)' }} />
             <StatRow value={String(MILAN_COURSE_COUNT)} label={t.home.statCourses} sub={t.home.statCoursesSub} />
-            <div style={{ height: '1px', background: 'var(--border)' }} />
-            <StatRow value={t.home.statFree} label={t.home.statFreeLabel} sub={t.home.statFreeSub} accent />
           </div>
         </FadeSection>
       </section>
