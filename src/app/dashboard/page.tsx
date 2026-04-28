@@ -950,34 +950,40 @@ export default function DashboardPage() {
             );
           })
         )}
-        {/* ── Test di orientamento ── */}
-        <div style={{ margin: '0.875rem 1.25rem 1.25rem' }}>
-          <Link href="/orientamento" style={{ textDecoration: 'none', display: 'block' }}>
-            <div style={{
-              background: '#1B5E52', borderRadius: '14px',
-              padding: '1rem 1.25rem',
-              display: 'flex', alignItems: 'center', gap: '1rem',
-            }}>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '2px' }}>
-                  Test di orientamento
-                </p>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>
-                  Scopri chi sei — disponibile prossimamente
-                </p>
-              </div>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 22h14M5 2h14" />
-                <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
-                <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
-              </svg>
-            </div>
-          </Link>
-        </div>
       </div>
     </section>
     );
   };
+
+  const sectionOrientamento = (
+    <section style={{ padding: '0.875rem 1.25rem 0' }}>
+      <Link href="/orientamento" style={{ textDecoration: 'none', display: 'block' }}>
+        <div style={{
+          background: '#1B5E52', borderRadius: '20px',
+          padding: '1.25rem 1.5rem',
+          display: 'flex', alignItems: 'center', gap: '1rem',
+          boxShadow: '0 4px 20px rgba(27,94,82,0.25)',
+        }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '2px' }}>
+              Test di orientamento
+            </p>
+            <p style={{ fontSize: '15px', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginBottom: '2px' }}>
+              Scopri chi sei
+            </p>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
+              Disponibile prossimamente
+            </p>
+          </div>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 22h14M5 2h14" />
+            <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+            <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+          </svg>
+        </div>
+      </Link>
+    </section>
+  );
 
   return (
     <div style={{ background: '#F5F5F5', minHeight: '100svh', paddingBottom: '2.5rem' }}>
@@ -1005,12 +1011,14 @@ export default function DashboardPage() {
           {PercorsoSection()}
           {sectionCorsi}
           {sectionDirezione}
+          {sectionOrientamento}
         </>
       ) : (
         <>
           {sectionDirezione}
           {sectionCorsi}
           {PercorsoSection()}
+          {sectionOrientamento}
         </>
       )}
     </div>
