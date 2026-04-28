@@ -190,6 +190,7 @@ export default function CorsoPage() {
   const { user } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+  const hasDragged = useRef(false);
   const dragStartX = useRef(0);
   const dragScrollLeft = useRef(0);
 
@@ -209,6 +210,7 @@ export default function CorsoPage() {
 
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     isDragging.current = true;
+    hasDragged.current = false;
     dragStartX.current = e.pageX - (scrollRef.current?.offsetLeft ?? 0);
     dragScrollLeft.current = scrollRef.current?.scrollLeft ?? 0;
     if (scrollRef.current) scrollRef.current.style.cursor = 'grabbing';
@@ -222,6 +224,7 @@ export default function CorsoPage() {
     e.preventDefault();
     const x = e.pageX - (scrollRef.current?.offsetLeft ?? 0);
     const walk = x - dragStartX.current;
+    if (Math.abs(walk) > 5) hasDragged.current = true;
     if (scrollRef.current) scrollRef.current.scrollLeft = dragScrollLeft.current - walk;
   };
 
@@ -247,38 +250,54 @@ export default function CorsoPage() {
     : [70, 55, 50, 30, 55] as [number, number, number, number, number];
   const matchPct = user?.onboarded ? getMatchPct(course, user) : null;
 
-  const description = `Corso di laurea ${course.tipo.toLowerCase()} in ${course.nome}, erogato da ${course.universita} nella sede di ${course.citta}. La durata prevista e di ${course.durata} ${course.durata === 1 ? 'anno' : 'anni'}${course.cfu ? ` per un totale di ${course.cfu} CFU` : ''}. Il corso appartiene alla classe ${course.classe} ed e tenuto in ${course.lingua}.`;
+  const descParts: string[] = [
+    `Corso di laurea ${course.tipo.toLowerCase()} in ${course.nome}, erogato da ${course.universita}${course.citta ? ` nella sede di ${course.citta}` : ''}.`,
+    `La durata è di ${course.durata} ${course.durata === 1 ? 'anno' : 'anni'}${course.cfu ? ` per un totale di ${course.cfu} CFU` : ''}.`,
+    course.classe ? `Appartiene alla classe di laurea ${course.classe}.` : '',
+  ].filter(Boolean);
+  const description = descParts.join(' ');
 
   // Bullet list items per Dettagli del corso
-  const detailItems: { label: string; value: ReactNode }[] = [
+  const detailItems: ({ label: string; value: ReactNode } | null)[] = [
     {
       label: 'Durata',
       value: `${course.durata} ${course.durata === 1 ? 'anno' : 'anni'}${course.cfu ? ` · ${course.cfu} CFU` : ''}`,
     },
-    { label: 'Classe di laurea', value: course.classe },
-    { label: 'Lingua', value: course.lingua || 'Non specificata' },
+    course.classe ? { label: 'Classe di laurea', value: course.classe } : null,
+    course.lingua ? { label: 'Lingua', value: course.lingua } : null,
     {
       label: 'Ammissione',
-      value: admission ? (
-        <span>
-          {admission.test}
-          {admission.rounds[0]?.application_close && (
-            <span style={{ fontWeight: 400, color: '#5C6B64' }}>
-              {' '}· scadenza {formatDeadline(admission.rounds[0].application_close)}
-              {admission.estimated ? ' (stimata)' : ''}
-            </span>
-          )}
-          {admission.bando_url && (
-            <>
-              {' '}
-              <a href={admission.bando_url} target="_blank" rel="noopener noreferrer"
-                style={{ color: '#1B5E52', textDecoration: 'none', fontWeight: 500 }}>
-                Bando
-              </a>
-            </>
-          )}
-        </span>
-      ) : 'Non disponibile',
+      value: (() => {
+        if (!admission) {
+          const isPrivate = PRIVATE_KEYWORDS.some(k => course.universita.includes(k));
+          if (isPrivate) return <span style={{ color: '#8A9D95' }}>Università privata — processo di selezione interno, consulta il sito ufficiale</span>;
+          return <span style={{ color: '#8A9D95' }}>Dati non ancora disponibili per questo ateneo</span>;
+        }
+        const hasNoDate = !admission.rounds[0]?.application_close;
+        const isDistantYear = user?.startYear && parseInt(user.startYear) >= 2027;
+        return (
+          <span>
+            {admission.test}
+            {hasNoDate && (
+              <span style={{ fontWeight: 400, color: '#8A9D95' }}>
+                {isDistantYear
+                  ? ` — il bando per il ${user!.startYear}/${String(parseInt(user!.startYear) + 1).slice(2)} non è ancora uscito`
+                  : ' — verifica le date sul bando ufficiale'}
+              </span>
+            )}
+            {!hasNoDate && (
+              <span style={{ fontWeight: 400, color: '#5C6B64' }}>
+                {' '}· scadenza {formatDeadline(admission.rounds[0].application_close)}
+                {admission.estimated ? ' (stimata)' : ''}
+              </span>
+            )}
+            {admission.bando_url && (
+              <> {' '}<a href={admission.bando_url} target="_blank" rel="noopener noreferrer"
+                style={{ color: '#1B5E52', textDecoration: 'none', fontWeight: 500 }}>Bando</a></>
+            )}
+          </span>
+        );
+      })(),
     },
     {
       label: 'Sito ufficiale',
@@ -287,9 +306,18 @@ export default function CorsoPage() {
           style={{ color: '#1B5E52', textDecoration: 'none', fontWeight: 600 }}>
           Apri sito
         </a>
-      ) : 'Non disponibile',
+      ) : <span style={{ color: '#8A9D95' }}>Non presente nel nostro database — cerca il corso su Google</span>,
     },
-  ];
+    {
+      label: 'Sbocchi lavorativi',
+      value: course.url ? (
+        <a href={course.url} target="_blank" rel="noopener noreferrer"
+          style={{ color: '#1B5E52', textDecoration: 'none', fontWeight: 500 }}>
+          Vedi sul sito del corso →
+        </a>
+      ) : <span style={{ color: '#8A9D95' }}>Disponibile prossimamente</span>,
+    },
+  ].filter(Boolean) as { label: string; value: ReactNode }[];
 
   return (
     <>
@@ -332,7 +360,7 @@ export default function CorsoPage() {
             </div>
           )}
           <h1 style={{
-            fontSize: 'clamp(1.75rem, 6vw, 2.25rem)', fontWeight: 700,
+            fontSize: 'clamp(1.75rem, 6vw, 3rem)', fontWeight: 700,
             color: '#1C2B26', letterSpacing: '-0.04em',
             lineHeight: 1.1, marginBottom: '1rem',
           }}>
@@ -359,13 +387,13 @@ export default function CorsoPage() {
         <Section label="Informazioni principali" title="Dettagli del corso">
           {/* Bullet list */}
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            {detailItems.map(({ label, value }) => (
+            {detailItems.map(item => { const { label, value } = item as { label: string; value: ReactNode }; return (
               <li key={label} style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', fontSize: '14px' }}>
                 <span style={{ color: '#C4BDB0', flexShrink: 0, fontSize: '12px' }}>—</span>
                 <span style={{ color: '#5C6B64', fontWeight: 500, flexShrink: 0 }}>{label}:</span>
                 <span style={{ color: '#1C2B26', fontWeight: 600 }}>{value}</span>
               </li>
-            ))}
+            ); })}
           </ul>
 
           {/* Descrizione */}
@@ -383,10 +411,27 @@ export default function CorsoPage() {
         </Section>
 
         {/* OVERVIEW */}
-        <Section label="Overview" title="Universita e dipartimento" comingSoon />
+        <Section label="Overview" title="Università e dipartimento">
+          <div style={{ background: '#F5F1E8', borderRadius: '12px', padding: '1.25rem 1.5rem', border: '1px solid #E4DDD0' }}>
+            <div style={{ fontSize: '11px', color: '#B0A898', fontStyle: 'italic', marginBottom: '0.875rem' }}>Disponibile prossimamente</div>
+            <ul style={{ margin: 0, padding: '0 0 0 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <li style={{ fontSize: '13px', color: '#8A9D95' }}>Ranking e riconoscimenti internazionali</li>
+              <li style={{ fontSize: '13px', color: '#8A9D95' }}>Professori e corsi caratterizzanti</li>
+              <li style={{ fontSize: '13px', color: '#8A9D95' }}>Notorietà e reputazione nel settore</li>
+            </ul>
+          </div>
+        </Section>
 
         {/* POSIZIONE */}
-        <Section label="Posizione" title="Dove si studia" comingSoon />
+        <Section label="Posizione" title="Dove si studia">
+          <div style={{ background: '#F5F1E8', borderRadius: '12px', padding: '1.25rem 1.5rem', border: '1px solid #E4DDD0' }}>
+            <div style={{ fontSize: '11px', color: '#B0A898', fontStyle: 'italic', marginBottom: '0.875rem' }}>Disponibile prossimamente</div>
+            <ul style={{ margin: 0, padding: '0 0 0 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <li style={{ fontSize: '13px', color: '#8A9D95' }}>Tratta da pendolare dalla tua città</li>
+              <li style={{ fontSize: '13px', color: '#8A9D95' }}>Affitti e situazione immobiliare nella zona</li>
+            </ul>
+          </div>
+        </Section>
 
         {/* MATCHING */}
         <Section label="Matching" title="Compatibilita con il tuo profilo">
@@ -405,10 +450,13 @@ export default function CorsoPage() {
               <PentagonFull values={scoreValues} size={220} />
 
               {/* Spiegazione vertici */}
-              <p style={{ fontSize: '12px', color: '#8A9D95', textAlign: 'center', lineHeight: 1.6, maxWidth: '380px', margin: 0 }}>
-                <strong style={{ color: '#5C6B64' }}>Posizione</strong> (sede a Milano), <strong style={{ color: '#5C6B64' }}>Costo</strong> (pubblico/privato),{' '}
-                <strong style={{ color: '#5C6B64' }}>Interessi</strong> (aree di studio), <strong style={{ color: '#5C6B64' }}>Attitudine</strong> (orientamento), <strong style={{ color: '#5C6B64' }}>Accesso</strong> (modalita di ammissione).
-              </p>
+              <ul style={{ fontSize: '12px', color: '#8A9D95', lineHeight: 1.9, margin: 0, padding: '0 0 0 1.1rem', alignSelf: 'flex-start', maxWidth: '380px' }}>
+                <li><strong style={{ color: '#5C6B64' }}>Posizione</strong> — sede del corso a Milano</li>
+                <li><strong style={{ color: '#5C6B64' }}>Costo</strong> — ateneo pubblico vs. privato rispetto alla tua preferenza</li>
+                <li><strong style={{ color: '#5C6B64' }}>Interessi</strong> — corrispondenza con le tue aree di studio</li>
+                <li><strong style={{ color: '#5C6B64' }}>Attitudine</strong> — allineamento con il tuo profilo di orientamento</li>
+                <li><strong style={{ color: '#5C6B64' }}>Accesso</strong> — facilità di ammissione in base al tipo di test</li>
+              </ul>
 
               {/* Match percentuale */}
               {matchPct !== null && (
@@ -482,8 +530,9 @@ export default function CorsoPage() {
                 <Link
                   key={c.id}
                   href={`/corso/${c.id}`}
-                  style={{ textDecoration: 'none', flexShrink: 0, width: '165px' }}
                   draggable={false}
+                  onClick={e => { if (hasDragged.current) { e.preventDefault(); hasDragged.current = false; } }}
+                  style={{ textDecoration: 'none', flexShrink: 0, width: '165px' }}
                 >
                   <div style={{
                     background: '#F5F1E8', borderRadius: '12px', padding: '0.875rem',
