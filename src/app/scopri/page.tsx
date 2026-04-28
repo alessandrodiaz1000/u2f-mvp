@@ -33,7 +33,8 @@ export default function ScopriPage() {
   const ts2 = t.app.scopri;
   const router = useRouter();
 
-  if (!user?.onboarded) { router.replace('/login'); return null; }
+  if (!user) { router.replace("/"); return null; }
+  if (!user.onboarded) { router.replace("/onboarding"); return null; }
 
   // Deck computed once at mount via the scoring system
   const [deck] = useState(() => buildDeck(user));

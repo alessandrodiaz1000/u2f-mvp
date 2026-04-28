@@ -32,7 +32,8 @@ export default function PersonePage() {
   const [tutorCorso, setTutorCorso] = useState('');
   const [tutorBio, setTutorBio] = useState('');
 
-  if (!user?.onboarded) { router.replace('/login'); return null; }
+  if (!user) { router.replace("/"); return null; }
+  if (!user.onboarded) { router.replace("/onboarding"); return null; }
 
   const canSubmitTutor = tutorUni && tutorYear && tutorCorso.trim().length > 3 && tutorBio.trim().length > 10;
 

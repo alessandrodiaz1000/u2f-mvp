@@ -305,7 +305,8 @@ export default function DashboardPage() {
   const [scoreInput, setScoreInput] = useState('');
   const [testTypeInput, setTestTypeInput] = useState('BAT');
 
-  if (!user?.onboarded) { router.replace('/login'); return null; }
+  if (!user) { router.replace("/"); return null; }
+  if (!user.onboarded) { router.replace("/onboarding"); return null; }
 
   const firstName    = user.name.split(' ')[0];
   const favCourses   = MILAN_COURSES.filter(c => user.favorites.includes(c.id));

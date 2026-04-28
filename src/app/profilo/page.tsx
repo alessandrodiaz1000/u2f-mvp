@@ -98,7 +98,8 @@ export default function ProfiloPage() {
   const tp = t.app.profilo;
   const router = useRouter();
 
-  if (!user?.onboarded) { router.replace('/login'); return null; }
+  if (!user) { router.replace("/"); return null; }
+  if (!user.onboarded) { router.replace("/onboarding"); return null; }
 
   const [areas, setAreas]       = useState<string[]>(user.areas ?? []);
   const [diploma, setDiploma]   = useState(user.diploma ?? '');

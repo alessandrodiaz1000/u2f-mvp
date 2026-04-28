@@ -19,7 +19,8 @@ export default function PreferitiPage() {
   const router = useRouter();
   const [comparing, setComparing] = useState<Set<number>>(new Set());
 
-  if (!user?.onboarded) { router.replace('/login'); return null; }
+  if (!user) { router.replace("/"); return null; }
+  if (!user.onboarded) { router.replace("/onboarding"); return null; }
 
   const favoriteCourses = MILAN_COURSES.filter(c => user.favorites.includes(c.id));
 
