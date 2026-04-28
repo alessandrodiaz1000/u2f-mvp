@@ -304,10 +304,11 @@ export default function EsploraPage() {
               const slug = mur ? uniSlug(mur.name) : null;
               const isFaved = user?.favorites.includes(c.id) ?? false;
               return (
-                <div key={c.id} style={{
+                <div key={c.id} onClick={() => router.push(`/corso/${c.id}`)} style={{
                   padding: '0.875rem 0',
                   borderBottom: '1px solid #F5F5F5',
                   display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
+                  cursor: 'pointer',
                 }}>
                   <span style={{
                     fontSize: '10px', fontWeight: 600, padding: '0.2rem 0.5rem',
@@ -317,11 +318,11 @@ export default function EsploraPage() {
                     {c.tipo}
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <Link href={`/corso/${c.id}`} style={{ fontSize: '13px', fontWeight: 500, color: '#111', lineHeight: 1.35, marginBottom: '3px', textDecoration: 'none', display: 'block' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 500, color: '#111', lineHeight: 1.35, marginBottom: '3px', display: 'block' }}>
                       {c.nome}
-                    </Link>
+                    </span>
                     <button
-                      onClick={() => setUniMenu({ slug, url: c.url, name: c.universita })}
+                      onClick={e => { e.stopPropagation(); setUniMenu({ slug, url: c.url, name: c.universita }); }}
                       style={{
                         fontSize: '11px', color: 'var(--accent)', fontWeight: 500,
                         background: 'none', border: 'none', padding: 0, cursor: 'pointer',
@@ -333,7 +334,7 @@ export default function EsploraPage() {
                   </div>
                   {/* Save button */}
                   <button
-                    onClick={() => isFaved ? removeFavorite(c.id) : addFavorite(c.id)}
+                    onClick={e => { e.stopPropagation(); isFaved ? removeFavorite(c.id) : addFavorite(c.id); }}
                     style={{
                       background: 'none', border: 'none', cursor: 'pointer',
                       padding: '0.25rem', flexShrink: 0, marginTop: '1px',

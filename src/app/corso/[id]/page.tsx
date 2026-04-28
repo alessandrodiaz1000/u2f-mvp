@@ -1,6 +1,6 @@
 'use client';
 import type { ReactNode } from 'react';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -187,7 +187,9 @@ function Section({ label, title, children, comingSoon }: {
 export default function CorsoPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, addFavorite, removeFavorite } = useAuth();
+  const [aiText, setAiText] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const hasDragged = useRef(false);
@@ -230,6 +232,30 @@ export default function CorsoPage() {
 
   const id = Number(params.id);
   const course = MILAN_COURSES.find(c => c.id === id);
+
+  const isFaved = user ? (user.favorites ?? []).includes(id) : false;
+
+  const generateOverview = useCallback(async () => {
+    if (!course || aiLoading || aiText) return;
+    const cacheKey = `u2f_ai_overview_${id}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) { setAiText(cached); return; }
+    setAiLoading(true);
+    try {
+      const res = await fetch('/api/corso-overview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseName: course.nome, universita: course.universita,
+          tipo: course.tipo, classe: course.classe,
+          lingua: course.lingua, area: course.area,
+        }),
+      });
+      const data = await res.json();
+      if (data.text) { setAiText(data.text); localStorage.setItem(cacheKey, data.text); }
+    } catch { /* silently fail */ }
+    finally { setAiLoading(false); }
+  }, [course, id, aiLoading, aiText]);
 
   if (!course) {
     return (
@@ -329,12 +355,13 @@ export default function CorsoPage() {
 
       <div style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 1.25rem 4rem' }}>
 
-        {/* Back */}
+        {/* Back + Save row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '1.75rem' }}>
         <button
           onClick={() => router.back()}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: '#8A9D95', fontSize: '13px', padding: '0 0 1.75rem',
+            color: '#8A9D95', fontSize: '13px', padding: 0,
             display: 'flex', alignItems: 'center', gap: '0.35rem',
           }}
         >
@@ -343,6 +370,26 @@ export default function CorsoPage() {
           </svg>
           Indietro
         </button>
+        {user && (
+          <button
+            onClick={() => isFaved ? removeFavorite(id) : addFavorite(id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.45rem 0.875rem', borderRadius: '20px',
+              fontSize: '12px', fontWeight: 600,
+              background: isFaved ? '#1B5E52' : '#F5F1E8',
+              color: isFaved ? '#fff' : '#1B5E52',
+              border: `1.5px solid ${isFaved ? '#1B5E52' : '#C4BDB0'}`,
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+          >
+            <svg width="13" height="13" fill={isFaved ? '#fff' : 'none'} viewBox="0 0 24 24" stroke={isFaved ? '#fff' : '#1B5E52'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+            {isFaved ? 'Salvato' : 'Salva'}
+          </button>
+        )}
+        </div>
 
         {/* Header */}
         <div style={{ marginBottom: '2.5rem' }}>
@@ -382,6 +429,49 @@ export default function CorsoPage() {
             )}
           </div>
         </div>
+
+        {/* AI OVERVIEW */}
+        <div style={{ borderTop: '1px solid #D4CEC2', paddingTop: '2rem', marginBottom: '2.5rem' }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#1B5E52', marginBottom: '0.4rem' }}>
+            AI
+          </div>
+          <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#1C2B26', letterSpacing: '-0.035em', marginBottom: '1.25rem', lineHeight: 1.2 }}>
+            Panoramica del corso
+          </h2>
+          {aiText ? (
+            <p style={{ fontSize: '14px', color: '#3A4A42', lineHeight: 1.75, margin: 0 }}>{aiText}</p>
+          ) : (
+            <button
+              onClick={generateOverview}
+              disabled={aiLoading}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.625rem',
+                padding: '0.75rem 1.25rem', borderRadius: '12px',
+                background: aiLoading ? '#F5F1E8' : '#1B5E52',
+                color: aiLoading ? '#8A9D95' : '#fff',
+                border: 'none', cursor: aiLoading ? 'default' : 'pointer',
+                fontSize: '13px', fontWeight: 600, transition: 'all 0.2s',
+              }}
+            >
+              {aiLoading ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                    <path d="M21 12a9 9 0 11-6.219-8.56" />
+                  </svg>
+                  Generazione in corso…
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2a10 10 0 0 1 10 10H12V2z" /><path d="M12 12 2.5 21" /><circle cx="12" cy="12" r="3" />
+                  </svg>
+                  Genera panoramica AI
+                </>
+              )}
+            </button>
+          )}
+        </div>
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
         {/* INFORMAZIONI PRINCIPALI */}
         <Section label="Informazioni principali" title="Dettagli del corso">
