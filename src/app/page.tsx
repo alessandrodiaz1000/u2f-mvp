@@ -11,20 +11,19 @@ const DEMO_USER = {
   id: 'demo',
   name: 'Studente',
   email: 'demo@u2future.it',
-  areas: ['Ingegneria', 'Informatica & AI', 'Economia & Management'],
-  diploma: 'Liceo Scientifico',
-  city: 'Milano',
-  degreeType: 'Triennale',
-  onboarded: true,
-  // Ingegneria Aerospaziale (Polimi), CLEAM (Bocconi), Informatica (Statale), Business (Cattolica), Arti (IULM)
-  favorites: [1618639, 1622080, 1618745, 1622098, 1616241],
-  swipedIds:  [1618639, 1622080, 1618745, 1622098, 1616241],
-  comparisonsCount: 1,
+  areas: [],
+  diploma: '',
+  city: '',
+  degreeType: '',
+  onboarded: false,
+  favorites: [],
+  swipedIds: [],
+  comparisonsCount: 0,
   scores: {},
-  uniPreference: 'indifferente' as const,
-  langPreference: 'indifferente' as const,
+  uniPreference: '' as const,
+  langPreference: '' as const,
   gradeAvg: '' as const,
-  startYear: '2026' as const,
+  startYear: '' as const,
   admissionTracking: [],
   admissionClosedActions: {},
 };
@@ -65,10 +64,11 @@ export default function HomePage() {
     try {
       const existing = localStorage.getItem('u2f_user');
       if (existing) {
-        router.replace('/dashboard');
+        const parsed = JSON.parse(existing);
+        router.replace(parsed.onboarded ? '/dashboard' : '/onboarding');
       } else {
         localStorage.setItem('u2f_user', JSON.stringify(DEMO_USER));
-        router.replace('/dashboard');
+        router.replace('/onboarding');
       }
     } catch { /* localStorage not available (SSR guard) */ }
   }, [router]);
