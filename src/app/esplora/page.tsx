@@ -25,7 +25,8 @@ const TIPO_STYLE: Record<string, { text: string; bg: string }> = {
 type UniMenu = { slug: string | null; url: string | undefined; name: string } | null;
 
 export default function EsploraPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const tipoLabel = t.app.corso.tipoLabel;
   const { user, addFavorite, removeFavorite } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('uni');
@@ -217,6 +218,7 @@ export default function EsploraPage() {
             <div style={{ display: 'flex', gap: '0.5rem', width: 'max-content' }}>
               {['', ...DEGREE_TYPES].map(d => {
                 const active = courseType === d;
+                const label = d ? (tipoLabel[d] ?? d) : t.esplora.all;
                 return (
                   <button key={d || 'all'} onClick={() => setCourseType(d)} style={{
                     padding: '0.35rem 0.875rem', borderRadius: '20px', fontSize: '13px', fontWeight: 500,
@@ -224,7 +226,7 @@ export default function EsploraPage() {
                     background: active ? 'var(--accent)' : '#fff',
                     color: active ? '#fff' : '#555',
                     cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.12s',
-                  }}>{d || 'Tutti'}</button>
+                  }}>{label}</button>
                 );
               })}
             </div>
@@ -315,7 +317,7 @@ export default function EsploraPage() {
                     borderRadius: '5px', flexShrink: 0, marginTop: '2px',
                     background: ts.bg, color: ts.text,
                   }}>
-                    {c.tipo}
+                    {tipoLabel[c.tipo] ?? c.tipo}
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ fontSize: '13px', fontWeight: 500, color: '#111', lineHeight: 1.35, marginBottom: '3px', display: 'block' }}>

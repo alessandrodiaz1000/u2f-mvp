@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { MILAN_COURSES, resolveUniversity, uniSlug } from '@/lib/data';
 import { scoreCourse } from '@/lib/scoring';
 import { getAdmissionInfo, formatDeadline } from '@/lib/admissions';
+import { useLanguage } from '@/context/LanguageContext';
 import type { Course } from '@/lib/data';
 import type { UserProfile } from '@/context/AuthContext';
 
@@ -56,7 +57,7 @@ function getSimilarCourses(course: Course, count = 10): Course[] {
 }
 
 // Pentagon con etichette complete — per la sezione Matching principale
-function PentagonFull({ values, size = 200 }: { values: number[]; size?: number }) {
+function PentagonFull({ values, labels, size = 200 }: { values: number[]; labels: string[]; size?: number }) {
   const cx = 100, cy = 100, r = 62;
   const angles = Array.from({ length: 5 }, (_, i) => -Math.PI / 2 + (i * 2 * Math.PI) / 5);
   const outline = angles.map(a => ({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }));
@@ -67,7 +68,6 @@ function PentagonFull({ values, size = 200 }: { values: number[]; size?: number 
   const outlinePts = outline.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
   const filledPts = filled.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
   const labelR = r + 22;
-  const labels = ['Posizione', 'Costo', 'Interessi', 'Attitudine', 'Accesso'];
   return (
     <svg viewBox="0 0 200 200" width={size} height={size}>
       {[0.33, 0.66, 1].map((f, i) => (
@@ -150,8 +150,8 @@ function HourglassIcon() {
   );
 }
 
-function Section({ label, title, children, comingSoon }: {
-  label: string; title: string; children?: ReactNode; comingSoon?: boolean;
+function Section({ label, title, children }: {
+  label: string; title: string; children?: ReactNode;
 }) {
   return (
     <div style={{ borderTop: '1px solid #D4CEC2', paddingTop: '2rem', marginBottom: '2.5rem' }}>
@@ -163,23 +163,12 @@ function Section({ label, title, children, comingSoon }: {
       </div>
       <h2 style={{
         fontSize: '1.375rem', fontWeight: 700, color: '#1C2B26',
-        letterSpacing: '-0.035em', marginBottom: comingSoon ? '1.25rem' : '1.5rem',
+        letterSpacing: '-0.035em', marginBottom: '1.5rem',
         lineHeight: 1.2,
       }}>
         {title}
       </h2>
-      {comingSoon ? (
-        <div style={{
-          background: '#F5F1E8', borderRadius: '12px', padding: '2rem 1.5rem',
-          border: '1px solid #E4DDD0',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem',
-        }}>
-          <HourglassIcon />
-          <span style={{ fontSize: '13px', color: '#8A9D95', fontWeight: 500 }}>
-            Disponibile prossimamente
-          </span>
-        </div>
-      ) : children}
+      {children}
     </div>
   );
 }
@@ -188,6 +177,8 @@ export default function CorsoPage() {
   const params = useParams();
   const router = useRouter();
   const { user, addFavorite, removeFavorite } = useAuth();
+  const { t } = useLanguage();
+  const tc = t.app.corso;
   const [aiText, setAiText] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -260,8 +251,8 @@ export default function CorsoPage() {
   if (!course) {
     return (
       <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
-        <p style={{ color: '#8A9D95', marginBottom: '1rem' }}>Corso non trovato.</p>
-        <Link href="/" style={{ color: '#1B5E52', fontWeight: 600, textDecoration: 'none' }}>Torna alla home</Link>
+        <p style={{ color: '#8A9D95', marginBottom: '1rem' }}>{tc.notFound}</p>
+        <Link href="/" style={{ color: '#1B5E52', fontWeight: 600, textDecoration: 'none' }}>{tc.backHome}</Link>
       </div>
     );
   }
@@ -276,28 +267,22 @@ export default function CorsoPage() {
     : [70, 55, 50, 30, 55] as [number, number, number, number, number];
   const matchPct = user?.onboarded ? getMatchPct(course, user) : null;
 
-  const descParts: string[] = [
-    `Corso di laurea ${course.tipo.toLowerCase()} in ${course.nome}, erogato da ${course.universita}${course.citta ? ` nella sede di ${course.citta}` : ''}.`,
-    `La durata è di ${course.durata} ${course.durata === 1 ? 'anno' : 'anni'}${course.cfu ? ` per un totale di ${course.cfu} CFU` : ''}.`,
-    course.classe ? `Appartiene alla classe di laurea ${course.classe}.` : '',
-  ].filter(Boolean);
-  const description = descParts.join(' ');
+  const description = tc.description(course.tipo, course.nome, course.universita, course.citta, course.durata, course.cfu, course.classe ?? '');
 
-  // Bullet list items per Dettagli del corso
   const detailItems: ({ label: string; value: ReactNode } | null)[] = [
     {
-      label: 'Durata',
-      value: `${course.durata} ${course.durata === 1 ? 'anno' : 'anni'}${course.cfu ? ` · ${course.cfu} CFU` : ''}`,
+      label: tc.duration,
+      value: `${course.durata} ${course.durata === 1 ? tc.year : tc.years}${course.cfu ? ` · ${course.cfu} CFU` : ''}`,
     },
-    course.classe ? { label: 'Classe di laurea', value: course.classe } : null,
-    course.lingua ? { label: 'Lingua', value: course.lingua } : null,
+    course.classe ? { label: tc.degreeClass, value: course.classe } : null,
+    course.lingua ? { label: tc.language, value: course.lingua } : null,
     {
-      label: 'Ammissione',
+      label: tc.admission,
       value: (() => {
         if (!admission) {
           const isPrivate = PRIVATE_KEYWORDS.some(k => course.universita.includes(k));
-          if (isPrivate) return <span style={{ color: '#8A9D95' }}>Università privata — processo di selezione interno, consulta il sito ufficiale</span>;
-          return <span style={{ color: '#8A9D95' }}>Dati non ancora disponibili per questo ateneo</span>;
+          if (isPrivate) return <span style={{ color: '#8A9D95' }}>{tc.admissionNa_private}</span>;
+          return <span style={{ color: '#8A9D95' }}>{tc.admissionNa_generic}</span>;
         }
         const hasNoDate = !admission.rounds[0]?.application_close;
         const isDistantYear = user?.startYear && parseInt(user.startYear) >= 2027;
@@ -307,8 +292,8 @@ export default function CorsoPage() {
             {hasNoDate && (
               <span style={{ fontWeight: 400, color: '#8A9D95' }}>
                 {isDistantYear
-                  ? ` — il bando per il ${user!.startYear}/${String(parseInt(user!.startYear) + 1).slice(2)} non è ancora uscito`
-                  : ' — verifica le date sul bando ufficiale'}
+                  ? ` — ${tc.admissionNa_distant(user!.startYear, String(parseInt(user!.startYear) + 1).slice(2))}`
+                  : ` — ${tc.admissionVerify}`}
               </span>
             )}
             {!hasNoDate && (
@@ -319,29 +304,29 @@ export default function CorsoPage() {
             )}
             {admission.bando_url && (
               <> {' '}<a href={admission.bando_url} target="_blank" rel="noopener noreferrer"
-                style={{ color: '#1B5E52', textDecoration: 'none', fontWeight: 500 }}>Bando</a></>
+                style={{ color: '#1B5E52', textDecoration: 'none', fontWeight: 500 }}>{tc.bandoLink}</a></>
             )}
           </span>
         );
       })(),
     },
     {
-      label: 'Sito ufficiale',
+      label: tc.officialSite,
       value: course.url ? (
         <a href={course.url} target="_blank" rel="noopener noreferrer"
           style={{ color: '#1B5E52', textDecoration: 'none', fontWeight: 600 }}>
-          Apri sito
+          {tc.openSite}
         </a>
-      ) : <span style={{ color: '#8A9D95' }}>Non presente nel nostro database — cerca il corso su Google</span>,
+      ) : <span style={{ color: '#8A9D95' }}>{tc.siteNa}</span>,
     },
     {
-      label: 'Sbocchi lavorativi',
+      label: tc.careers,
       value: course.url ? (
         <a href={course.url} target="_blank" rel="noopener noreferrer"
           style={{ color: '#1B5E52', textDecoration: 'none', fontWeight: 500 }}>
-          Vedi sul sito del corso →
+          {tc.careersLink}
         </a>
-      ) : <span style={{ color: '#8A9D95' }}>Disponibile prossimamente</span>,
+      ) : <span style={{ color: '#8A9D95' }}>{tc.careersNa}</span>,
     },
   ].filter(Boolean) as { label: string; value: ReactNode }[];
 
@@ -368,7 +353,7 @@ export default function CorsoPage() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A9D95" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 5l-7 7 7 7" />
           </svg>
-          Indietro
+          {tc.back}
         </button>
         {user && (
           <button
@@ -386,7 +371,7 @@ export default function CorsoPage() {
             <svg width="13" height="13" fill={isFaved ? '#fff' : 'none'} viewBox="0 0 24 24" stroke={isFaved ? '#fff' : '#1B5E52'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
             </svg>
-            {isFaved ? 'Salvato' : 'Salva'}
+            {isFaved ? tc.saved : tc.save}
           </button>
         )}
         </div>
@@ -433,10 +418,10 @@ export default function CorsoPage() {
         {/* AI OVERVIEW */}
         <div style={{ borderTop: '1px solid #D4CEC2', paddingTop: '2rem', marginBottom: '2.5rem' }}>
           <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#1B5E52', marginBottom: '0.4rem' }}>
-            AI
+            {tc.aiSection}
           </div>
           <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#1C2B26', letterSpacing: '-0.035em', marginBottom: '1.25rem', lineHeight: 1.2 }}>
-            Panoramica del corso
+            {tc.aiTitle}
           </h2>
           {aiText ? (
             <p style={{ fontSize: '14px', color: '#3A4A42', lineHeight: 1.75, margin: 0 }}>{aiText}</p>
@@ -458,14 +443,14 @@ export default function CorsoPage() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
                     <path d="M21 12a9 9 0 11-6.219-8.56" />
                   </svg>
-                  Generazione in corso…
+                  {tc.aiLoading}
                 </>
               ) : (
                 <>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 2a10 10 0 0 1 10 10H12V2z" /><path d="M12 12 2.5 21" /><circle cx="12" cy="12" r="3" />
                   </svg>
-                  Genera panoramica AI
+                  {tc.aiGenerate}
                 </>
               )}
             </button>
@@ -474,7 +459,7 @@ export default function CorsoPage() {
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
         {/* INFORMAZIONI PRINCIPALI */}
-        <Section label="Informazioni principali" title="Dettagli del corso">
+        <Section label={tc.detailsLabel} title={tc.detailsTitle}>
           {/* Bullet list */}
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             {detailItems.map(item => { const { label, value } = item as { label: string; value: ReactNode }; return (
@@ -501,57 +486,52 @@ export default function CorsoPage() {
         </Section>
 
         {/* OVERVIEW */}
-        <Section label="Overview" title="Università e dipartimento">
+        <Section label={tc.overviewLabel} title={tc.overviewTitle}>
           <div style={{ background: '#F5F1E8', borderRadius: '12px', padding: '1.25rem 1.5rem', border: '1px solid #E4DDD0' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <HourglassIcon />
-              <span style={{ fontSize: '11px', color: '#B0A898', fontStyle: 'italic' }}>Disponibile prossimamente</span>
+              <span style={{ fontSize: '11px', color: '#B0A898', fontStyle: 'italic' }}>{tc.comingSoon}</span>
             </div>
             <ul style={{ margin: 0, padding: '0 0 0 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <li style={{ fontSize: '13px', color: '#8A9D95' }}>Ranking e riconoscimenti internazionali</li>
-              <li style={{ fontSize: '13px', color: '#8A9D95' }}>Professori e corsi caratterizzanti</li>
-              <li style={{ fontSize: '13px', color: '#8A9D95' }}>Notorietà e reputazione nel settore</li>
+              {tc.overviewItems.map(item => <li key={item} style={{ fontSize: '13px', color: '#8A9D95' }}>{item}</li>)}
             </ul>
           </div>
         </Section>
 
         {/* POSIZIONE */}
-        <Section label="Posizione" title="Dove si studia">
+        <Section label={tc.positionLabel} title={tc.positionTitle}>
           <div style={{ background: '#F5F1E8', borderRadius: '12px', padding: '1.25rem 1.5rem', border: '1px solid #E4DDD0' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <HourglassIcon />
-              <span style={{ fontSize: '11px', color: '#B0A898', fontStyle: 'italic' }}>Disponibile prossimamente</span>
+              <span style={{ fontSize: '11px', color: '#B0A898', fontStyle: 'italic' }}>{tc.comingSoon}</span>
             </div>
             <ul style={{ margin: 0, padding: '0 0 0 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <li style={{ fontSize: '13px', color: '#8A9D95' }}>Tratta da pendolare dalla tua città</li>
-              <li style={{ fontSize: '13px', color: '#8A9D95' }}>Affitti e situazione immobiliare nella zona</li>
+              {tc.positionItems.map(item => <li key={item} style={{ fontSize: '13px', color: '#8A9D95' }}>{item}</li>)}
             </ul>
           </div>
         </Section>
 
         {/* MATCHING */}
-        <Section label="Matching" title="Compatibilita con il tuo profilo">
+        <Section label={tc.matchingLabel} title={tc.matchingTitle}>
           {!user?.onboarded ? (
             <div style={{
               background: '#F5F1E8', borderRadius: '12px', padding: '1.5rem',
               border: '1px solid #E4DDD0', fontSize: '14px', color: '#5C6B64', textAlign: 'center',
             }}>
-              <Link href="/login" style={{ color: '#1B5E52', fontWeight: 700, textDecoration: 'none' }}>Accedi</Link>
-              {' '}per vedere la compatibilita con il tuo profilo.
+              <Link href="/login" style={{ color: '#1B5E52', fontWeight: 700, textDecoration: 'none' }}>{tc.matchingLoginLink}</Link>
+              {' '}{tc.matchingLogin}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
 
               {/* Pentagon centrato */}
-              <PentagonFull values={scoreValues} size={220} />
+              <PentagonFull values={scoreValues} labels={tc.pentagonLabels} size={220} />
 
               {/* Spiegazione vertici */}
               <ul style={{ fontSize: '12px', color: '#8A9D95', lineHeight: 1.9, margin: 0, padding: '0 0 0 1.1rem', alignSelf: 'flex-start', maxWidth: '380px' }}>
-                <li><strong style={{ color: '#5C6B64' }}>Posizione</strong> — sede del corso a Milano</li>
-                <li><strong style={{ color: '#5C6B64' }}>Costo</strong> — ateneo pubblico vs. privato rispetto alla tua preferenza</li>
-                <li><strong style={{ color: '#5C6B64' }}>Interessi</strong> — corrispondenza con le tue aree di studio</li>
-                <li><strong style={{ color: '#5C6B64' }}>Attitudine</strong> — allineamento con il tuo profilo di orientamento</li>
-                <li><strong style={{ color: '#5C6B64' }}>Accesso</strong> — facilità di ammissione in base al tipo di test</li>
+                {tc.pentagonDesc.map(({ label, desc }) => (
+                  <li key={label}><strong style={{ color: '#5C6B64' }}>{label}</strong> — {desc}</li>
+                ))}
               </ul>
 
               {/* Match percentuale */}
@@ -561,27 +541,21 @@ export default function CorsoPage() {
                     {matchPct}%
                   </div>
                   <div style={{ fontSize: '13px', color: '#8A9D95', marginTop: '6px' }}>
-                    Match con i tuoi interessi
+                    {tc.matchPct}
                   </div>
                 </div>
               )}
 
               {/* Barre dimensioni */}
               <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {([
-                  ['Posizione', scoreValues[0]],
-                  ['Costo', scoreValues[1]],
-                  ['Interessi', scoreValues[2]],
-                  ['Attitudine', scoreValues[3]],
-                  ['Accesso', scoreValues[4]],
-                ] as [string, number][]).map(([label, value]) => (
+                {tc.pentagonLabels.map((label, i) => (
                   <div key={label}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span style={{ fontSize: '12px', color: '#5C6B64', fontWeight: 500 }}>{label}</span>
-                      <span style={{ fontSize: '12px', color: '#8A9D95' }}>{value}/100</span>
+                      <span style={{ fontSize: '12px', color: '#8A9D95' }}>{scoreValues[i]}/100</span>
                     </div>
                     <div style={{ height: '5px', background: '#E4DDD0', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ width: `${value}%`, height: '100%', background: '#1B5E52', borderRadius: '3px' }} />
+                      <div style={{ width: `${scoreValues[i]}%`, height: '100%', background: '#1B5E52', borderRadius: '3px' }} />
                     </div>
                   </div>
                 ))}
@@ -596,13 +570,13 @@ export default function CorsoPage() {
             fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: '#1B5E52', marginBottom: '0.4rem',
           }}>
-            Corsi simili
+            {tc.similarLabel}
           </div>
           <h2 style={{
             fontSize: '1.375rem', fontWeight: 700, color: '#1C2B26',
             letterSpacing: '-0.035em', marginBottom: '1.25rem', lineHeight: 1.2,
           }}>
-            Potrebbero interessarti
+            {tc.similarTitle}
           </h2>
           <div
             ref={scrollRef}
