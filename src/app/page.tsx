@@ -64,6 +64,7 @@ export default function HomePage() {
     try {
       const existing = localStorage.getItem('u2f_user');
       localStorage.setItem('u2f_user', JSON.stringify(DEMO_USER));
+      localStorage.setItem('u2f_lang', 'it');
       router.replace('/onboarding');
     } catch { /* localStorage not available (SSR guard) */ }
   }, [router]);

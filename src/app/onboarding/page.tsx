@@ -18,7 +18,7 @@ const AREAS_IT = [
 const DIPLOMAS = ['Liceo Scientifico', 'Liceo Classico', 'ITI', 'ITC', 'Liceo Linguistico', 'Liceo Artistico', 'Altro'];
 const CITIES   = ['Milano', 'Roma', 'Torino', 'Napoli', 'Bologna', 'Firenze'];
 
-const TOTAL_STEPS = 6; // 0=lang, 1=welcome, 2=areas, 3=diploma, 4=city, 5=degree
+const TOTAL_STEPS = 5; // 1=welcome, 2=areas, 3=diploma, 4=city, 5=degree
 
 function ProgressDots({ step }: { step: number }) {
   return (
@@ -71,7 +71,7 @@ export default function OnboardingPage() {
   const { t, lang, setLang } = useLanguage();
   const to = t.app.onboarding;
   const router = useRouter();
-  const [step, setStep] = useState(0); // start at 0 = language
+  const [step, setStep] = useState(1); // start at 1 = welcome
 
   const [areas, setAreas]       = useState<string[]>([]);
   const [diploma, setDiploma]   = useState('');
@@ -97,7 +97,7 @@ export default function OnboardingPage() {
   ];
 
   const canNext = [
-    true,                        // step 0 = language (IT pre-selected, always ok)
+    ,                            // step 0 unused
     true,                        // step 1 = welcome
     areas.length > 0,            // step 2 = areas
     !!diploma,                   // step 3 = diploma
@@ -228,8 +228,6 @@ export default function OnboardingPage() {
     </div>,
   ];
 
-  const isLangStep = step === 0;
-
   return (
     <div style={{
       minHeight: '100svh', background: 'var(--bg)',
@@ -238,15 +236,13 @@ export default function OnboardingPage() {
     }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-        {isLangStep ? <div /> : <U2FLogo size={28} />}
-        {!isLangStep && (
-          <span style={{ fontSize: '12px', color: 'var(--text-3)', fontWeight: 500 }}>
-            {step} / {TOTAL_STEPS - 1}
-          </span>
-        )}
+        <U2FLogo size={28} />
+        <span style={{ fontSize: '12px', color: 'var(--text-3)', fontWeight: 500 }}>
+          {step} / {TOTAL_STEPS}
+        </span>
       </div>
 
-      {!isLangStep && <ProgressDots step={step} />}
+      <ProgressDots step={step} />
 
       {/* Step content */}
       <div style={{ flex: 1 }}>
