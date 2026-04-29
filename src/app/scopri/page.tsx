@@ -194,26 +194,26 @@ export default function ScopriPage() {
 
           {/* University accent bar */}
           <div style={{
-            height: '6px', flexShrink: 0,
+            height: '4px', flexShrink: 0,
             background: `linear-gradient(90deg, var(--accent), ${ts.text})`,
             borderRadius: '24px 24px 0 0',
           }} />
 
           {/* Card content */}
-          <div style={{ flex: 1, padding: '2rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ flex: 1, padding: '1.25rem 1.25rem 1rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
 
             {/* University name */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <span style={{ fontSize: '11px', color: '#aaa', fontWeight: 500, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+            <div style={{ marginBottom: '0.625rem' }}>
+              <span style={{ fontSize: '10px', color: '#aaa', fontWeight: 500, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 {current.universita.length > 50 ? current.universita.slice(0, 48) + '…' : current.universita}
               </span>
             </div>
 
             {/* Course name */}
             <h2 style={{
-              fontSize: 'clamp(1.375rem, 5.5vw, 1.75rem)', fontWeight: 700,
+              fontSize: 'clamp(1.2rem, 5vw, 1.5rem)', fontWeight: 700,
               letterSpacing: '-0.04em', color: '#111',
-              lineHeight: 1.15, marginBottom: '1.5rem',
+              lineHeight: 1.15, marginBottom: '1rem',
             }}>
               <Link href={`/corso/${current.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
                 {current.nome}
@@ -221,7 +221,7 @@ export default function ScopriPage() {
             </h2>
 
             {/* Badges */}
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
               <span style={{ fontSize: '11px', fontWeight: 600, padding: '0.3rem 0.75rem', borderRadius: '20px', background: ts.bg, color: ts.text }}>
                 {current.tipo}
               </span>
@@ -279,7 +279,7 @@ export default function ScopriPage() {
           </div>
 
           {/* Hint */}
-          <p style={{ fontSize: '10px', color: '#ccc', textAlign: 'center', padding: '0 1rem 1.25rem', letterSpacing: '0.02em' }}>
+          <p style={{ fontSize: '9px', color: '#ccc', textAlign: 'center', padding: '0 1rem 0.625rem', letterSpacing: '0.02em' }}>
             {ts2.hint}
           </p>
         </div>
@@ -287,7 +287,7 @@ export default function ScopriPage() {
 
       {/* ── Buttons ── */}
       <div style={{
-        padding: '0.875rem 0 calc(0.875rem + env(safe-area-inset-bottom))',
+        padding: '0.625rem 0 calc(0.625rem + env(safe-area-inset-bottom))',
         display: 'flex', gap: '1.25rem', justifyContent: 'center', alignItems: 'center',
         background: '#F7F7F7', borderTop: '1px solid #EBEBEB',
       }}>
