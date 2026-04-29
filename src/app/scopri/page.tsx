@@ -127,7 +127,7 @@ export default function ScopriPage() {
   const admClosed = admInfo ? isAdmissionClosed(admInfo) : false;
 
   return (
-    <div style={{ background: '#F7F7F7', height: '100svh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ background: '#F7F7F7', height: 'calc(100svh - 4.25rem - env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <TopBar />
 
       {/* ── Card stack ── */}
