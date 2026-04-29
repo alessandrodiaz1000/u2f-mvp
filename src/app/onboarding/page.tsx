@@ -5,20 +5,20 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { U2FLogo } from '@/components/U2FLogo';
 
-const AREAS = [
+const AREAS_IT = [
   'Ingegneria', 'Informatica & AI', 'Matematica', 'Fisica', 'Chimica',
   'Biologia & Biotecnologie', 'Medicina', 'Farmacia & Scienze Farmaceutiche',
   'Architettura & Design', 'Economia & Management', 'Finanza & Banking',
   'Marketing & Comunicazione', 'Giurisprudenza', 'Scienze Politiche & Relazioni Internazionali',
-  'Psicologia', 'Scienze dell\'Educazione', 'Lingue & Letterature',
+  'Psicologia', "Scienze dell'Educazione", 'Lingue & Letterature',
   'Storia, Filosofia & Sociologia', 'Arte & Moda', 'Musica & Spettacolo',
   'Scienze Ambientali & Agraria', 'Nutrizione & Alimentazione',
 ];
-const DIPLOMAS = ['Liceo Scientifico', 'Liceo Classico', 'ITI', 'ITC', 'Liceo Linguistico', 'Liceo Artistico', 'Altro'];
-const DEGREES  = ['Triennale', 'Magistrale', 'Ciclo Unico', 'Non so ancora'];
-const CITIES   = ['Milano', 'Roma', 'Torino', 'Napoli', 'Bologna', 'Firenze', 'Altra città'];
 
-const TOTAL_STEPS = 5;
+const DIPLOMAS = ['Liceo Scientifico', 'Liceo Classico', 'ITI', 'ITC', 'Liceo Linguistico', 'Liceo Artistico', 'Altro'];
+const CITIES   = ['Milano', 'Roma', 'Torino', 'Napoli', 'Bologna', 'Firenze'];
+
+const TOTAL_STEPS = 6; // 0=lang, 1=welcome, 2=areas, 3=diploma, 4=city, 5=degree
 
 function ProgressDots({ step }: { step: number }) {
   return (
@@ -35,8 +35,10 @@ function ProgressDots({ step }: { step: number }) {
 }
 
 function OptionGrid({ options, selected, onSelect, multi = false }: {
-  options: string[]; selected: string | string[];
-  onSelect: (v: string) => void; multi?: boolean;
+  options: { value: string; label: string }[];
+  selected: string | string[];
+  onSelect: (v: string) => void;
+  multi?: boolean;
 }) {
   const isSelected = (v: string) =>
     multi ? (selected as string[]).includes(v) : selected === v;
@@ -45,19 +47,19 @@ function OptionGrid({ options, selected, onSelect, multi = false }: {
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem' }}>
       {options.map(opt => (
         <button
-          key={opt}
-          onClick={() => onSelect(opt)}
+          key={opt.value}
+          onClick={() => onSelect(opt.value)}
           style={{
             padding: '0.75rem 1.125rem', borderRadius: '12px', fontSize: '14px',
-            fontWeight: isSelected(opt) ? 600 : 400,
-            border: `1.5px solid ${isSelected(opt) ? 'var(--accent)' : 'var(--border)'}`,
-            background: isSelected(opt) ? 'var(--accent-bg)' : 'var(--surface)',
-            color: isSelected(opt) ? 'var(--accent)' : 'var(--text-1)',
+            fontWeight: isSelected(opt.value) ? 600 : 400,
+            border: `1.5px solid ${isSelected(opt.value) ? 'var(--accent)' : 'var(--border)'}`,
+            background: isSelected(opt.value) ? 'var(--accent-bg)' : 'var(--surface)',
+            color: isSelected(opt.value) ? 'var(--accent)' : 'var(--text-1)',
             cursor: 'pointer', transition: 'all 0.12s',
             letterSpacing: '-0.01em',
           }}
         >
-          {opt}
+          {opt.label}
         </button>
       ))}
     </div>
@@ -66,10 +68,10 @@ function OptionGrid({ options, selected, onSelect, multi = false }: {
 
 export default function OnboardingPage() {
   const { user, completeOnboarding } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
   const to = t.app.onboarding;
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0); // start at 0 = language
 
   const [areas, setAreas]       = useState<string[]>([]);
   const [diploma, setDiploma]   = useState('');
@@ -82,16 +84,29 @@ export default function OnboardingPage() {
 
   const firstName = user.name.split(' ')[0];
 
+  // Build localised area options (value=Italian key for scoring, label=translated)
+  const areaOptions = AREAS_IT.map(a => ({ value: a, label: to.areaLabels[a] ?? a }));
+
+  // Degree options come from translations (value=Italian for scoring, label=localised)
+  const degreeOptions = to.degreeOptions;
+
+  // City options
+  const cityOptions = [
+    ...CITIES.map(c => ({ value: c, label: c })),
+    { value: 'Altra città', label: to.cityOther },
+  ];
+
   const canNext = [
-    true,              // step 1 = benvenuto
-    areas.length > 0,  // step 2
-    !!diploma,      // step 3
-    !!(city && (city !== 'Altra città' || cityCustom)), // step 4
-    !!degree,       // step 5
-  ][step - 1];
+    true,                        // step 0 = language (IT pre-selected, always ok)
+    true,                        // step 1 = welcome
+    areas.length > 0,            // step 2 = areas
+    !!diploma,                   // step 3 = diploma
+    !!(city && (city !== 'Altra città' || cityCustom)), // step 4 = city
+    !!degree,                    // step 5 = degree
+  ][step];
 
   const next = () => {
-    if (step < TOTAL_STEPS) { setStep(s => s + 1); return; }
+    if (step < TOTAL_STEPS - 1) { setStep(s => s + 1); return; }
     completeOnboarding({
       areas, diploma,
       city: city === 'Altra città' ? cityCustom : city,
@@ -101,6 +116,48 @@ export default function OnboardingPage() {
   };
 
   const STEPS = [
+    /* 0 — Language selection (bilingual by design) */
+    <div key="0">
+      <div style={{ marginBottom: '2rem' }}>
+        <U2FLogo size={44} />
+      </div>
+      <h2 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.04em', color: 'var(--text-1)', marginBottom: '0.5rem', lineHeight: 1.2 }}>
+        Scegli la lingua
+        <span style={{ display: 'block', fontSize: '1.125rem', fontWeight: 500, color: 'var(--text-3)', marginTop: '0.25rem' }}>
+          Choose your language
+        </span>
+      </h2>
+      <p style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '2rem' }}>
+        Puoi cambiarla in qualsiasi momento · You can change it anytime
+      </p>
+      <div style={{ display: 'flex', gap: '1rem' }}>
+        {([
+          { code: 'it' as const, flag: '🇮🇹', label: 'Italiano' },
+          { code: 'en' as const, flag: '🇬🇧', label: 'English' },
+        ]).map(({ code, flag, label }) => (
+          <button
+            key={code}
+            onClick={() => setLang(code)}
+            style={{
+              flex: 1, padding: '1.5rem 1rem', borderRadius: '16px',
+              border: `2px solid ${lang === code ? 'var(--accent)' : 'var(--border)'}`,
+              background: lang === code ? 'var(--accent-bg)' : 'var(--surface)',
+              cursor: 'pointer', transition: 'all 0.15s',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
+            }}
+          >
+            <span style={{ fontSize: '2rem' }}>{flag}</span>
+            <span style={{
+              fontSize: '15px', fontWeight: lang === code ? 700 : 500,
+              color: lang === code ? 'var(--accent)' : 'var(--text-2)',
+            }}>
+              {label}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>,
+
     /* 1 — Welcome */
     <div key="1">
       <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>👋</div>
@@ -118,7 +175,12 @@ export default function OnboardingPage() {
         {to.areasTitle}
       </h2>
       <p style={{ fontSize: '0.875rem', color: 'var(--text-3)', marginBottom: '1.5rem' }}>{to.areasSub}</p>
-      <OptionGrid options={AREAS} selected={areas} onSelect={v => setAreas(prev => prev.includes(v) ? prev.filter(a => a !== v) : [...prev, v])} multi />
+      <OptionGrid
+        options={areaOptions}
+        selected={areas}
+        onSelect={v => setAreas(prev => prev.includes(v) ? prev.filter(a => a !== v) : [...prev, v])}
+        multi
+      />
     </div>,
 
     /* 3 — Tipo di diploma */
@@ -127,7 +189,11 @@ export default function OnboardingPage() {
         {to.diplomaTitle}
       </h2>
       <p style={{ fontSize: '0.875rem', color: 'var(--text-3)', marginBottom: '1.5rem' }}>{to.diplomaSub}</p>
-      <OptionGrid options={DIPLOMAS} selected={diploma} onSelect={setDiploma} />
+      <OptionGrid
+        options={DIPLOMAS.map(d => ({ value: d, label: d }))}
+        selected={diploma}
+        onSelect={setDiploma}
+      />
     </div>,
 
     /* 4 — Città */
@@ -138,7 +204,7 @@ export default function OnboardingPage() {
       <p style={{ fontSize: '0.875rem', color: 'var(--text-3)', marginBottom: '1.5rem' }}>
         {to.citySub}
       </p>
-      <OptionGrid options={CITIES} selected={city} onSelect={setCity} />
+      <OptionGrid options={cityOptions} selected={city} onSelect={setCity} />
       {city === 'Altra città' && (
         <input
           type="text" value={cityCustom} onChange={e => setCityCustom(e.target.value)}
@@ -158,9 +224,11 @@ export default function OnboardingPage() {
       <p style={{ fontSize: '0.875rem', color: 'var(--text-3)', marginBottom: '1.5rem' }}>
         {to.degreeSub}
       </p>
-      <OptionGrid options={DEGREES} selected={degree} onSelect={setDegree} />
+      <OptionGrid options={degreeOptions} selected={degree} onSelect={setDegree} />
     </div>,
   ];
+
+  const isLangStep = step === 0;
 
   return (
     <div style={{
@@ -170,22 +238,24 @@ export default function OnboardingPage() {
     }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-        <U2FLogo size={28} />
-        <span style={{ fontSize: '12px', color: 'var(--text-3)', fontWeight: 500 }}>
-          {step} / {TOTAL_STEPS}
-        </span>
+        {isLangStep ? <div /> : <U2FLogo size={28} />}
+        {!isLangStep && (
+          <span style={{ fontSize: '12px', color: 'var(--text-3)', fontWeight: 500 }}>
+            {step} / {TOTAL_STEPS - 1}
+          </span>
+        )}
       </div>
 
-      <ProgressDots step={step} />
+      {!isLangStep && <ProgressDots step={step} />}
 
       {/* Step content */}
       <div style={{ flex: 1 }}>
-        {STEPS[step - 1]}
+        {STEPS[step]}
       </div>
 
       {/* Footer nav */}
       <div style={{ paddingTop: '2rem', display: 'flex', gap: '0.75rem' }}>
-        {step > 1 && (
+        {step > 0 && (
           <button
             onClick={() => setStep(s => s - 1)}
             style={{
@@ -211,7 +281,7 @@ export default function OnboardingPage() {
             letterSpacing: '-0.02em', transition: 'background 0.15s',
           }}
         >
-          {step === TOTAL_STEPS ? to.start : to.next}
+          {step === TOTAL_STEPS - 1 ? to.start : to.next}
         </button>
       </div>
     </div>
