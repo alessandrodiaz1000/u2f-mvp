@@ -291,34 +291,40 @@ export default function ScopriPage() {
         display: 'flex', gap: '1.25rem', justifyContent: 'center', alignItems: 'center',
         background: '#F7F7F7', borderTop: '1px solid #EBEBEB',
       }}>
+        {/* Back — minimal left arrow */}
         <button onClick={doUndo} disabled={history.length === 0} style={{
-          width: '52px', height: '52px', borderRadius: '50%',
-          background: '#fff', border: `1.5px solid ${history.length === 0 ? '#E5E5E5' : '#BBB'}`,
+          background: 'none', border: 'none',
           cursor: history.length === 0 ? 'default' : 'pointer',
+          color: history.length === 0 ? '#DDD' : '#AAA',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          color: history.length === 0 ? '#CCC' : '#555',
-          transition: 'all 0.15s',
+          padding: '0.5rem',
+          transition: 'color 0.15s',
         }}>
-          <IconUndo size={22} strokeWidth={1.75} />
+          <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
+
+        {/* Skip — gray, same size as Save */}
         <button onClick={() => doSwipe('left')} style={{
-          width: '60px', height: '60px', borderRadius: '50%',
-          background: '#fff', border: '1.5px solid #E5E5E5',
+          width: '64px', height: '64px', borderRadius: '50%',
+          background: '#EFEFEF', border: 'none',
           cursor: 'pointer', color: '#888',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         }}>
-          <IconX size={24} strokeWidth={2} />
+          <IconX size={26} strokeWidth={2} />
         </button>
+
+        {/* Save — green, same size as Skip */}
         <button onClick={() => doSwipe('right')} style={{
-          width: '72px', height: '72px', borderRadius: '50%',
+          width: '64px', height: '64px', borderRadius: '50%',
           background: 'var(--accent)', border: 'none',
           cursor: 'pointer', color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 20px rgba(27,94,82,0.35)',
+          boxShadow: '0 4px 20px rgba(27,94,82,0.3)',
         }}>
-          <IconHeart size={28} strokeWidth={1.75} />
+          <IconHeart size={26} strokeWidth={1.75} />
         </button>
         <Link href="/preferiti">
           <button style={{
