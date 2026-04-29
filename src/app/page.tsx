@@ -1,10 +1,33 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { U2FLogo } from '@/components/U2FLogo';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLanguage } from '@/context/LanguageContext';
 import { MILAN_UNIVERSITIES, MILAN_COURSES, DOCTORAL_ONLY, UNI_COURSE_COUNT } from '@/lib/data';
+
+const DEMO_USER = {
+  id: 'demo',
+  name: 'Studente',
+  email: 'demo@u2future.it',
+  areas: ['Ingegneria', 'Informatica & AI', 'Economia & Management'],
+  diploma: 'Liceo Scientifico',
+  city: 'Milano',
+  degreeType: 'Triennale',
+  onboarded: true,
+  // Ingegneria Aerospaziale (Polimi), CLEAM (Bocconi), Informatica (Statale), Business (Cattolica), Arti (IULM)
+  favorites: [1618639, 1622080, 1618745, 1622098, 1616241],
+  swipedIds:  [1618639, 1622080, 1618745, 1622098, 1616241],
+  comparisonsCount: 1,
+  scores: {},
+  uniPreference: 'indifferente' as const,
+  langPreference: 'indifferente' as const,
+  gradeAvg: '' as const,
+  startYear: '2026' as const,
+  admissionTracking: [],
+  admissionClosedActions: {},
+};
 
 const MILAN_UNI_COUNT   = MILAN_UNIVERSITIES.filter(u => !DOCTORAL_ONLY.has(u.mur_code)).length;
 const MILAN_COURSE_COUNT = MILAN_COURSES.length;
@@ -33,7 +56,22 @@ function FadeSection({ children, style }: { children: React.ReactNode; style?: R
 
 export default function HomePage() {
   const { t } = useLanguage();
+  const router = useRouter();
   const heroLines = t.home.heroTitle.split('\n');
+
+  // Auto-demo: if no session exists, create demo and go straight to dashboard.
+  // If a real session exists, redirect to their dashboard.
+  useEffect(() => {
+    try {
+      const existing = localStorage.getItem('u2f_user');
+      if (existing) {
+        router.replace('/dashboard');
+      } else {
+        localStorage.setItem('u2f_user', JSON.stringify(DEMO_USER));
+        router.replace('/dashboard');
+      }
+    } catch { /* localStorage not available (SSR guard) */ }
+  }, [router]);
 
   return (
     <div style={{ background: 'var(--bg)' }}>
