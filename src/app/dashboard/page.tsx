@@ -345,7 +345,7 @@ export default function DashboardPage() {
           <ClarityRing score={clarityScore} />
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: '10px', color: '#BBB', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-              td.clarityTitle
+              {td.clarityTitle}
             </p>
             <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#111', letterSpacing: '-0.03em', marginBottom: '0.25rem', lineHeight: 1.2 }}>
               {clarityLabel}
@@ -371,7 +371,7 @@ export default function DashboardPage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: '9px', color: '#BBB', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1px' }}>
-                  PROSSIMO STEP
+                  {td.nextStepLabel}
                 </p>
                 <p style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
                   {lang === "en" ? nextAdmission.currentStep.label_en : nextAdmission.currentStep.label_it}
@@ -419,7 +419,7 @@ export default function DashboardPage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: '9px', color: '#BBB', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1px' }}>
-                  PROSSIMO STEP
+                  {td.nextStepLabel}
                 </p>
                 <p style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
                   {nextStep.title}
@@ -444,7 +444,7 @@ export default function DashboardPage() {
         boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
       }}>
         <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: '1rem' }}>
-          td.directionTitle
+          {td.directionTitle}
         </h2>
         {direction.map(({ area, pct }) => (
           <div key={area} style={{ marginBottom: '0.625rem' }}>
@@ -469,7 +469,7 @@ export default function DashboardPage() {
         marginBottom: '0.75rem',
       }}>
         <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
-          Corsi salvati{favCourses.length > 0 && (
+          {td.savedCourses}{favCourses.length > 0 && (
             <span style={{ color: '#BBB', fontWeight: 400, marginLeft: '0.375rem' }}>
               ({favCourses.length})
             </span>
@@ -578,7 +578,7 @@ export default function DashboardPage() {
           <div style={{ flexShrink: 0, color: 'rgba(255,255,255,0.9)' }}>{nextStep.icon}</div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '2px' }}>
-              PROSSIMO STEP
+              {td.nextStepLabel}
             </p>
             <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginBottom: '2px' }}>
               {nextStep.title}
