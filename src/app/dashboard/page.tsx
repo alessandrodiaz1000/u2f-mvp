@@ -104,16 +104,16 @@ function computeDirection(user: UserProfile): { area: string; pct: number }[] {
   return top.map(([area, score]) => ({ area, pct: Math.round((score / topSum) * 100) }));
 }
 
-function getNextStep(user: UserProfile): { icon: React.ReactNode; title: string; sub: string; href: string } {
+function getNextStep(user: UserProfile, ns: typeof import('@/i18n/translations').default.it.app.dashboard.nextSteps): { icon: React.ReactNode; title: string; sub: string; href: string } {
   if (user.swipedIds.length === 0)
-    return { icon: <IconHeart size={30} strokeWidth={1.5} />, title: 'Inizia a esplorare', sub: 'Scorri i corsi e salva quelli che ti interessano', href: '/scopri' };
+    return { icon: <IconHeart size={30} strokeWidth={1.5} />, title: ns.explore.title, sub: ns.explore.sub, href: '/scopri' };
   if (user.favorites.length < 2)
-    return { icon: <IconBookmark size={30} strokeWidth={1.5} />, title: 'Salva altri corsi', sub: 'Ti servono almeno 2 corsi salvati per confrontarli', href: '/scopri' };
+    return { icon: <IconBookmark size={30} strokeWidth={1.5} />, title: ns.saveMore.title, sub: ns.saveMore.sub, href: '/scopri' };
   if ((user.comparisonsCount ?? 0) === 0)
-    return { icon: <IconSearch size={30} strokeWidth={1.5} />, title: 'Confronta i tuoi corsi', sub: "Metti fianco a fianco i corsi salvati e chiedilo all'AI", href: '/preferiti' };
+    return { icon: <IconSearch size={30} strokeWidth={1.5} />, title: ns.compare.title, sub: ns.compare.sub, href: '/preferiti' };
   if (Object.keys(user.scores ?? {}).length === 0)
-    return { icon: <IconCompass size={30} strokeWidth={1.5} />, title: 'Scopri chi sei', sub: 'Fai il test di orientamento per affinare il tuo profilo', href: '/orientamento' };
-  return { icon: <IconCalendar size={30} strokeWidth={1.5} />, title: 'Segna le scadenze', sub: 'Controlla le date di ammissione che ti interessano', href: '/esplora' };
+    return { icon: <IconCompass size={30} strokeWidth={1.5} />, title: ns.quiz.title, sub: ns.quiz.sub, href: '/orientamento' };
+  return { icon: <IconCalendar size={30} strokeWidth={1.5} />, title: ns.deadlines.title, sub: ns.deadlines.sub, href: '/esplora' };
 }
 
 // ── Admission roadmap from saved courses ─────────────────────────────
@@ -299,7 +299,8 @@ function ClarityRing({ score }: { score: number }) {
 // ── Main Page ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user, updateAdmissionProgress, updateProfile, setAdmissionClosedAction } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const td = t.app.dashboard;
   const router = useRouter();
   const [openCourseId, setOpenCourseId] = useState<number | null>(null);
   const [scoreInput, setScoreInput] = useState('');
@@ -318,13 +319,13 @@ export default function DashboardPage() {
   const favCourses   = MILAN_COURSES.filter(c => user.favorites.includes(c.id));
   const clarityScore = computeClarity(user);
   const direction    = computeDirection(user);
-  const nextStep     = getNextStep(user);
+  const nextStep     = getNextStep(user, td.nextSteps);
   const percorso     = computePercorso(user);
 
   const clarityLabel =
-    clarityScore >= 70 ? 'Ottima chiarezza!' :
-    clarityScore >= 35 ? 'Buon inizio' :
-    'Stai iniziando';
+    clarityScore >= 70 ? td.clarityLabels[2] :
+    clarityScore >= 35 ? td.clarityLabels[1] :
+    td.clarityLabels[0];
 
   // urgencyMode = ammissione quest'anno o il prossimo
   const urgencyMode = user.startYear === '2025' || user.startYear === '2026';
@@ -344,7 +345,7 @@ export default function DashboardPage() {
           <ClarityRing score={clarityScore} />
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: '10px', color: '#BBB', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-              CLARITY SCORE
+              td.clarityTitle
             </p>
             <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#111', letterSpacing: '-0.03em', marginBottom: '0.25rem', lineHeight: 1.2 }}>
               {clarityLabel}
@@ -373,7 +374,7 @@ export default function DashboardPage() {
                   PROSSIMO STEP
                 </p>
                 <p style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
-                  {nextAdmission.currentStep.label_it}
+                  {lang === "en" ? nextAdmission.currentStep.label_en : nextAdmission.currentStep.label_it}
                 </p>
                 <p style={{ fontSize: '11px', color: nextAdmissionUrgent ? '#EF4444' : '#888', marginTop: '1px' }}>
                   {nextAdmission.uniShort} · {nextAdmission.test}
@@ -400,7 +401,7 @@ export default function DashboardPage() {
           <>
             <div style={{ height: '1px', background: '#F0F0F0', margin: '1rem 0 0.875rem' }} />
             <p style={{ fontSize: '12px', color: '#AAA', textAlign: 'center' }}>
-              ✓ Percorso di ammissione completato
+              {td.admissionCompleted}
             </p>
           </>
         )}
@@ -443,7 +444,7 @@ export default function DashboardPage() {
         boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
       }}>
         <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: '1rem' }}>
-          La tua direzione
+          td.directionTitle
         </h2>
         {direction.map(({ area, pct }) => (
           <div key={area} style={{ marginBottom: '0.625rem' }}>
@@ -476,7 +477,7 @@ export default function DashboardPage() {
         </h2>
         {favCourses.length > 0 && (
           <Link href="/preferiti" style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
-            Vedi tutti →
+            {td.seeAll}
           </Link>
         )}
       </div>
@@ -488,7 +489,7 @@ export default function DashboardPage() {
           textAlign: 'center',
         }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', color: '#DDD' }}><IconBookmark size={36} strokeWidth={1.25} /></div>
-          <p style={{ fontSize: '13px', color: '#AAA', marginBottom: '1rem' }}>Nessun corso salvato ancora.</p>
+          <p style={{ fontSize: '13px', color: '#AAA', marginBottom: '1rem' }}>{td.noSavedCta}</p>
           <Link href="/scopri">
             <button style={{
               background: 'var(--accent)', color: '#fff', border: 'none',
@@ -626,11 +627,11 @@ export default function DashboardPage() {
       }}>
         <div style={{ padding: '1rem 1.25rem 0.875rem', borderBottom: '1px solid #F5F5F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
-            Percorso di ammissione
+            {td.admissionTitle}
           </h2>
           {!urgencyMode && user.startYear && (
             <span style={{ fontSize: '10px', color: '#BBB', fontWeight: 500 }}>
-              Date indicative {user.startYear}/{String(parseInt(user.startYear) + 1).slice(2)}
+              {td.estimatedDates(user.startYear, String(parseInt(user.startYear) + 1).slice(2))}
             </span>
           )}
         </div>
@@ -639,7 +640,7 @@ export default function DashboardPage() {
         {deadlines.length > 0 && (
           <>
             <div style={{ padding: '0.5rem 1.25rem 0.375rem', background: '#FAFAFA', borderBottom: '1px solid #F5F5F5' }}>
-              <span style={{ fontSize: '9px', fontWeight: 700, color: '#AAA', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Scadenze</span>
+              <span style={{ fontSize: '9px', fontWeight: 700, color: '#AAA', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{td.deadlinesLabel}</span>
             </div>
             {deadlines.map(entry => {
               const ddDays = daysUntil(entry.stepDeadline);
@@ -652,7 +653,7 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '12px', fontWeight: 600, color: '#222', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.uniShort}</div>
-                    <div style={{ fontSize: '10px', color: '#888', marginTop: '1px' }}>{entry.test} · {entry.currentStep?.label_it}</div>
+                    <div style={{ fontSize: '10px', color: '#888', marginTop: '1px' }}>{entry.test} · {lang === "en" ? entry.currentStep?.label_en : entry.currentStep?.label_it}</div>
                     <div style={{ fontSize: '10px', color: ddUrgent ? '#EF4444' : '#999', fontWeight: 600, marginTop: '1px' }}>
                       {entry.estimated ? '~' : ''}entro {formatDeadline(entry.stepDeadline)}
                     </div>
@@ -666,7 +667,7 @@ export default function DashboardPage() {
               );
             })}
             <div style={{ padding: '0.5rem 1.25rem 0.375rem', background: '#FAFAFA', borderTop: '1px solid #EBEBEB', borderBottom: '1px solid #F5F5F5' }}>
-              <span style={{ fontSize: '9px', fontWeight: 700, color: '#AAA', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Percorso</span>
+              <span style={{ fontSize: '9px', fontWeight: 700, color: '#AAA', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{td.pathwayLabel}</span>
             </div>
           </>
         )}
@@ -750,11 +751,11 @@ export default function DashboardPage() {
                         padding: '0.15rem 0.5rem', borderRadius: '20px',
                         background: '#FFF1F1', color: '#EF4444',
                       }}>
-                        Chiuso
+                        {td.closedBadge}
                       </span>
                     </div>
                     <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.5, marginBottom: '0.875rem' }}>
-                      Le ammissioni {entry.sourceYear}/{String(parseInt(entry.sourceYear) + 1).slice(2)} sono chiuse. Cosa vuoi fare?
+                      {td.admissionClosed(entry.sourceYear, String(parseInt(entry.sourceYear) + 1).slice(2))}
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       {nextYear && (
@@ -769,7 +770,7 @@ export default function DashboardPage() {
                             border: '1.5px solid #A7F3D0', cursor: 'pointer', textAlign: 'left',
                           }}>
                           <IconCalendar size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-                          Sono disposto a iniziare nel {nextYear}/{String(parseInt(nextYear) + 1).slice(2)}
+                          {td.delayBtn(nextYear, String(parseInt(nextYear) + 1).slice(2))}
                         </button>
                       )}
                       <button
@@ -783,7 +784,7 @@ export default function DashboardPage() {
                           border: '1.5px solid #E5E5E5', cursor: 'pointer', textAlign: 'left',
                         }}>
                           <IconSearch size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-                          Cerca alternative per il {entry.sourceYear}/{String(parseInt(entry.sourceYear) + 1).slice(2)}
+                          {td.alternativesBtn(entry.sourceYear, String(parseInt(entry.sourceYear) + 1).slice(2))}
                       </button>
                     </div>
                   </div>
@@ -807,7 +808,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <span style={{ fontSize: '10px', fontWeight: 600, flexShrink: 0, padding: '0.15rem 0.5rem', borderRadius: '20px', background: entry.done ? '#E4F0ED' : '#F5F5F5', color: entry.done ? '#1B5E52' : '#888' }}>
-                    {entry.done ? <><IconCheck size={10} strokeWidth={2.5} /> Completato</> : `step ${entry.stepIndex + 1}/${entry.totalSteps}`}
+                    {entry.done ? <><IconCheck size={10} strokeWidth={2.5} /> {td.completedBadge}</> : `step ${entry.stepIndex + 1}/${entry.totalSteps}`}
                   </span>
                   <IconChevDown size={14} strokeWidth={2} style={{ flexShrink: 0, color: '#BBB', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                 </button>
@@ -844,7 +845,7 @@ export default function DashboardPage() {
                               color: isDone ? '#AAA' : isLocked ? '#CCC' : '#222',
                               textDecoration: isDone ? 'line-through' : 'none',
                             }}>
-                              {step.label_it}
+                              {lang === "en" ? step.label_en : step.label_it}
                             </span>
                             {isCurrent && entry.stepDeadline && (
                               <span style={{ marginLeft: '0.375rem', fontSize: '10px', fontWeight: 600, color: stepUrgent ? '#EF4444' : '#888' }}>
@@ -892,7 +893,7 @@ export default function DashboardPage() {
                           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                             <input
                               type="number"
-                              placeholder={entry.currentStep.score_label_it ?? 'Punteggio'}
+                              placeholder={lang === "en" ? (entry.currentStep.score_label_en ?? "Score") : (entry.currentStep.score_label_it ?? "Punteggio")}
                               value={scoreInput}
                               onChange={e => setScoreInput(e.target.value)}
                               style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1.5px solid #E0E0E0', fontSize: '13px', outline: 'none', background: '#fff' }}
@@ -925,7 +926,7 @@ export default function DashboardPage() {
                             border: `1.5px solid ${urgent ? '#FCA5A5' : '#D0D0D0'}`,
                             cursor: 'pointer', textAlign: 'center',
                           }}>
-                          Segna come completato: {entry.currentStep.label_it}
+                          {td.markDone(lang === "en" ? entry.currentStep.label_en : entry.currentStep.label_it)}
                         </button>
                       )}
                     </div>
@@ -935,7 +936,7 @@ export default function DashboardPage() {
                     <div style={{ marginTop: '0.5rem' }}>
                       <a href={entry.bando_url} target="_blank" rel="noopener noreferrer"
                         style={{ fontSize: '11px', color: '#1B5E52', fontWeight: 500, textDecoration: 'none' }}>
-                        Bando ufficiale →
+                        {td.officialGuide}
                       </a>
                     </div>
                   )}
@@ -966,13 +967,13 @@ export default function DashboardPage() {
         }}>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '2px' }}>
-              Test di orientamento
+              {td.testCtaLabel}
             </p>
             <p style={{ fontSize: '15px', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginBottom: '2px' }}>
-              Scopri chi sei
+              {td.testCtaTitle}
             </p>
             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
-              Disponibile prossimamente
+              {td.testCtaSub}
             </p>
           </div>
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">

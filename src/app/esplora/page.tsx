@@ -107,15 +107,13 @@ export default function EsploraPage() {
         padding: '1rem 1.25rem 0.875rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
-          <h1 style={{ fontSize: '17px', fontWeight: 700, color: '#111', letterSpacing: '-0.03em' }}>
-            Cerca
-          </h1>
+          <h1 style={{ fontSize: '17px', fontWeight: 700, color: '#111', letterSpacing: '-0.03em' }}>{lang === "en" ? "Search" : "Cerca"}</h1>
           <LanguageSwitcher />
         </div>
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 0, marginBottom: '0.875rem' }}>
-          {([['uni', 'Università'], ['corsi', 'Corsi']] as [Tab, string][]).map(([key, label]) => (
+          {([['uni', t.esplora.title.split(' ')[0]], ['corsi', t.corsi.title.split(' ')[0]]] as [Tab, string][]).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               flex: 1, padding: '0.5rem 0', background: 'none', border: 'none',
               fontSize: '14px', fontWeight: tab === key ? 600 : 400,
@@ -298,7 +296,7 @@ export default function EsploraPage() {
           <div style={{ padding: '0.625rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1px', background: '#fff' }}>
             {filteredCorsi.length === 0 ? (
               <p style={{ textAlign: 'center', fontSize: '14px', color: '#999', padding: '3rem 0' }}>
-                Nessun corso trovato
+                {t.corsi.noResults}
               </p>
             ) : filteredCorsi.slice(0, visible).map(c => {
               const ts = TIPO_STYLE[c.tipo] ?? TIPO_STYLE.Triennale;
