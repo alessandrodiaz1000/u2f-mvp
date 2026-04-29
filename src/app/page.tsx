@@ -63,13 +63,8 @@ export default function HomePage() {
   useEffect(() => {
     try {
       const existing = localStorage.getItem('u2f_user');
-      if (existing) {
-        const parsed = JSON.parse(existing);
-        router.replace(parsed.onboarded ? '/dashboard' : '/onboarding');
-      } else {
-        localStorage.setItem('u2f_user', JSON.stringify(DEMO_USER));
-        router.replace('/onboarding');
-      }
+      localStorage.setItem('u2f_user', JSON.stringify(DEMO_USER));
+      router.replace('/onboarding');
     } catch { /* localStorage not available (SSR guard) */ }
   }, [router]);
 
