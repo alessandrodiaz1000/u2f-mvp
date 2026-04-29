@@ -305,38 +305,26 @@ export default function ScopriPage() {
           </svg>
         </button>
 
-        {/* Skip — gray, same size as Save */}
-        <button onClick={() => doSwipe('left')} style={{
-          width: '64px', height: '64px', borderRadius: '50%',
-          background: '#EFEFEF', border: 'none',
-          cursor: 'pointer', color: '#888',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        }}>
-          <IconX size={26} strokeWidth={2} />
-        </button>
-
-        {/* Save — green, same size as Skip */}
+        {/* Save — green, centered, biggest */}
         <button onClick={() => doSwipe('right')} style={{
-          width: '64px', height: '64px', borderRadius: '50%',
+          width: '72px', height: '72px', borderRadius: '50%',
           background: 'var(--accent)', border: 'none',
           cursor: 'pointer', color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 4px 20px rgba(27,94,82,0.3)',
         }}>
-          <IconHeart size={26} strokeWidth={1.75} />
+          <IconHeart size={28} strokeWidth={1.75} />
         </button>
-        <Link href="/preferiti">
-          <button style={{
-            width: '52px', height: '52px', borderRadius: '50%',
-            background: '#fff', border: '1.5px solid #E5E5E5',
-            cursor: 'pointer', color: '#555',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          }}>
-            <IconBookmark size={22} strokeWidth={1.75} />
-          </button>
-        </Link>
+
+        {/* Skip — red minimal, same size as back arrow */}
+        <button onClick={() => doSwipe('left')} style={{
+          background: 'none', border: 'none',
+          cursor: 'pointer', color: '#C0392B',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '0.5rem',
+        }}>
+          <IconX size={22} strokeWidth={2.2} />
+        </button>
       </div>
     </div>
   );
