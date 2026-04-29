@@ -59,6 +59,10 @@ const translations = {
       noResults: 'Nessuna università trovata',
       reset: 'Reset',
       courses: 'corsi',
+      viewAllCourses: 'Vedi tutti i corsi',
+      officialSite: 'Sito ufficiale',
+      cancel: 'Annulla',
+      searchCourses: 'Cerca corso o università…',
     },
     corsi: {
       title: 'Corsi a Milano',
@@ -410,6 +414,10 @@ const translations = {
       noResults: 'No universities found',
       reset: 'Reset',
       courses: 'courses',
+      viewAllCourses: 'View all courses',
+      officialSite: 'Official website',
+      cancel: 'Cancel',
+      searchCourses: 'Search course or university…',
     },
     corsi: {
       title: 'Courses in Milan',

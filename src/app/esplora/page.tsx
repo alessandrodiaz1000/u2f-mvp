@@ -135,7 +135,7 @@ export default function EsploraPage() {
           {tab === 'uni' ? (
             <input
               type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Cerca università…"
+              placeholder={t.esplora.search}
               style={{
                 width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem',
                 background: '#F7F7F7', border: '1px solid #EBEBEB', borderRadius: '12px',
@@ -145,7 +145,7 @@ export default function EsploraPage() {
           ) : (
             <input
               type="text" value={courseSearch} onChange={e => setCourseSearch(e.target.value)}
-              placeholder="Cerca corso o università…"
+              placeholder={t.esplora.searchCourses}
               style={{
                 width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem',
                 background: '#F7F7F7', border: '1px solid #EBEBEB', borderRadius: '12px',
@@ -239,7 +239,7 @@ export default function EsploraPage() {
           <div style={{ padding: '0.875rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {filteredUnis.length === 0 ? (
               <p style={{ textAlign: 'center', fontSize: '14px', color: '#999', padding: '3rem 0' }}>
-                Nessuna università trovata
+                {t.esplora.noResults}
               </p>
             ) : filteredUnis.map(uni => {
               const count = UNI_COURSE_COUNT.get(uni.mur_code) ?? 0;
@@ -262,7 +262,7 @@ export default function EsploraPage() {
                         background: uni.public_private === 'state' ? '#F0FDF4' : '#EFF6FF',
                         color: uni.public_private === 'state' ? '#166534' : '#1D4ED8',
                       }}>
-                        {uni.public_private === 'state' ? 'Statale' : 'Privata'}
+                        {uni.public_private === 'state' ? t.esplora.pubblica : t.esplora.privata}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -281,7 +281,7 @@ export default function EsploraPage() {
                         )}
                       </div>
                       <span style={{ fontSize: '12px', color: '#999', flexShrink: 0 }}>
-                        <span style={{ fontWeight: 600, color: 'var(--accent)' }}>{count}</span> corsi
+                        <span style={{ fontWeight: 600, color: 'var(--accent)' }}>{count}</span> {t.esplora.courses}
                       </span>
                     </div>
                   </div>
@@ -392,7 +392,7 @@ export default function EsploraPage() {
                     textAlign: 'left',
                   }}
                 >
-                  📚 Vedi tutti i corsi
+                  {t.esplora.viewAllCourses}
                 </button>
               )}
               {uniMenu.url && (
@@ -409,7 +409,7 @@ export default function EsploraPage() {
                     textDecoration: 'none',
                   }}
                 >
-                  <IconExtLink size={15} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Sito ufficiale
+                  <IconExtLink size={15} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> {t.esplora.officialSite}
                 </a>
               )}
               <button
@@ -420,7 +420,7 @@ export default function EsploraPage() {
                   fontSize: '14px', color: '#999', cursor: 'pointer',
                 }}
               >
-                Annulla
+                {t.esplora.cancel}
               </button>
             </div>
           </div>
